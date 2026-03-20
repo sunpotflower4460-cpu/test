@@ -1,5 +1,6 @@
 // ==========================================
-// じぶん会議 - UI描画・制御
+// じぶん会議 – UI v2.0
+// イニシャルアバター, localStorage, toast
 // ==========================================
 
 const UI = {
@@ -13,13 +14,14 @@ const UI = {
       startBtn: document.getElementById('start-btn'),
       header: document.getElementById('header'),
       sessionTitle: document.getElementById('session-title'),
+      modeIndicator: document.getElementById('mode-indicator'),
       menuBtn: document.getElementById('menu-btn'),
+      mapBtn: document.getElementById('map-btn'),
       sidebar: document.getElementById('sidebar'),
       sidebarClose: document.getElementById('sidebar-close'),
       sidebarOverlay: document.getElementById('sidebar-overlay'),
       newSessionBtn: document.getElementById('new-session-btn'),
       sessionList: document.getElementById('session-list'),
-      personaMapBtn: document.getElementById('persona-map-btn'),
       chatArea: document.getElementById('chat-area'),
       messages: document.getElementById('messages'),
       agentBar: document.getElementById('agent-bar'),
@@ -31,6 +33,7 @@ const UI = {
       personaDetail: document.getElementById('persona-detail'),
       mapModal: document.getElementById('map-modal'),
       relationshipMap: document.getElementById('relationship-map'),
+      modeToast: document.getElementById('mode-toast'),
     };
   },
 
@@ -39,51 +42,57 @@ const UI = {
     this.els.mainScreen.classList.add('active');
   },
 
+  // --- Sidebar ---
   openSidebar() {
-    this.els.sidebar.classList.add('sidebar-open');
-    this.els.sidebarOverlay.classList.add('visible');
+    this.els.sidebar.classList.add('open');
+    this.els.sidebarOverlay.classList.add('open');
   },
-
   closeSidebar() {
-    this.els.sidebar.classList.remove('sidebar-open');
-    this.els.sidebarOverlay.classList.remove('visible');
+    this.els.sidebar.classList.remove('open');
+    this.els.sidebarOverlay.classList.remove('open');
   },
 
+  // --- Agent bar ---
   renderAgentIcons(selectedId, onSelect, onLongPress) {
     this.els.agentIcons.innerHTML = '';
 
     AGENTS.forEach(agent => {
       const el = document.createElement('div');
       el.className = 'agent-icon' + (selectedId === agent.id ? ' selected' : '');
-      el.style.background = agent.glow;
-      el.style.color = agent.color;
+      el.style.background = agent.gradient;
       el.innerHTML = `
-        ${agent.icon}
-        <span class="agent-tooltip">${agent.name}（${agent.role}）</span>
+        ${agent.initial}
+        <span class="agent-icon-label">${agent.name}</span>
       `;
 
       el.addEventListener('click', () => onSelect(agent.id));
 
+      // Long press for modal
       let pressTimer;
       el.addEventListener('touchstart', (e) => {
         pressTimer = setTimeout(() => {
           e.preventDefault();
           onLongPress(agent.id);
         }, 500);
-      });
+      }, { passive: false });
       el.addEventListener('touchend', () => clearTimeout(pressTimer));
       el.addEventListener('touchmove', () => clearTimeout(pressTimer));
+
+      // Desktop: double click for modal
+      el.addEventListener('dblclick', () => onLongPress(agent.id));
 
       this.els.agentIcons.appendChild(el);
     });
 
-    const masterEl = document.createElement('div');
-    masterEl.className = 'agent-icon-master' + (selectedId === 'master' ? ' selected' : '');
-    masterEl.textContent = '全員';
-    masterEl.addEventListener('click', () => onSelect('master'));
-    this.els.agentIcons.appendChild(masterEl);
+    // Random button (replaces 全員)
+    const randEl = document.createElement('div');
+    randEl.className = 'agent-icon agent-icon--random' + (selectedId === 'random' ? ' selected' : '');
+    randEl.innerHTML = `?<span class="agent-icon-label">ランダム</span>`;
+    randEl.addEventListener('click', () => onSelect('random'));
+    this.els.agentIcons.appendChild(randEl);
   },
 
+  // --- Messages ---
   addUserMessage(text) {
     const div = document.createElement('div');
     div.className = 'message message-user';
@@ -94,17 +103,17 @@ const UI = {
 
   addAgentMessage(agent, text, mode) {
     const div = document.createElement('div');
-    div.className = 'message message-agent';
+    div.className = `message message-agent ${agent.animClass}`;
 
-    const modeInfo = mode ? `<span class="agent-mode-label">— ${mode.emoji} ${mode.name}</span>` : '';
+    const modeLabel = mode ? `<span class="agent-mode-label">— ${mode.name}</span>` : '';
 
     div.innerHTML = `
       <div class="agent-label">
-        <div class="agent-icon-small" style="background:${agent.glow}; color:${agent.color};">
-          ${agent.icon}
+        <div class="agent-avatar-sm" style="background:${agent.gradient};">
+          ${agent.initial}
         </div>
         <span class="agent-name-label" style="color:${agent.color};">${agent.name}</span>
-        ${modeInfo}
+        ${modeLabel}
       </div>
       <div class="bubble ${agent.bubbleClass}">${this.escapeHtml(text)}</div>
     `;
@@ -115,43 +124,43 @@ const UI = {
   },
 
   addReactions(messageEl, reactions) {
-    const reactionsDiv = document.createElement('div');
-    reactionsDiv.className = 'reactions';
+    const container = document.createElement('div');
+    container.className = 'reactions';
 
     reactions.forEach(r => {
       const agent = getAgent(r.agentId);
       if (!agent) return;
       const tag = document.createElement('span');
       tag.className = 'reaction';
-      tag.style.background = agent.glow;
+      tag.style.background = agent.bg;
       tag.style.color = agent.color;
       tag.style.borderColor = agent.color;
-      tag.innerHTML = `${agent.icon} ${r.text}`;
-      reactionsDiv.appendChild(tag);
+      tag.innerHTML = `
+        <span class="reaction-dot" style="background:${agent.color};"></span>
+        ${agent.name} ${r.text}
+      `;
+      container.appendChild(tag);
     });
 
     const bubble = messageEl.querySelector('.bubble');
-    if (bubble) {
-      bubble.after(reactionsDiv);
-    }
+    if (bubble) bubble.after(container);
   },
 
+  // --- Typing ---
   showTypingIndicator(agent) {
     const div = document.createElement('div');
-    div.className = 'message message-agent typing-message';
+    div.className = `message message-agent typing-message ${agent.animClass}`;
     div.setAttribute('data-typing', agent.id);
 
     div.innerHTML = `
       <div class="agent-label">
-        <div class="agent-icon-small" style="background:${agent.glow}; color:${agent.color};">
-          ${agent.icon}
+        <div class="agent-avatar-sm" style="background:${agent.gradient};">
+          ${agent.initial}
         </div>
         <span class="agent-name-label" style="color:${agent.color};">${agent.name}</span>
       </div>
       <div class="bubble ${agent.bubbleClass}">
-        <div class="typing-indicator">
-          <span></span><span></span><span></span>
-        </div>
+        <div class="typing-dots"><span></span><span></span><span></span></div>
       </div>
     `;
 
@@ -165,18 +174,45 @@ const UI = {
     if (el) el.remove();
   },
 
+  // --- Focus effect (for sequential responses) ---
+  setFocusedMessage(messageEl) {
+    this.els.messages.classList.add('focusing');
+    document.querySelectorAll('#messages .message').forEach(m => m.classList.remove('focused'));
+    if (messageEl) messageEl.classList.add('focused');
+  },
+  clearFocus() {
+    this.els.messages.classList.remove('focusing');
+    document.querySelectorAll('#messages .message').forEach(m => m.classList.remove('focused'));
+  },
+
+  // --- Toast ---
+  showToast(text, duration) {
+    duration = duration || 2500;
+    this.els.modeToast.textContent = text;
+    this.els.modeToast.classList.add('show');
+    setTimeout(() => {
+      this.els.modeToast.classList.remove('show');
+    }, duration);
+  },
+
+  // --- Mode indicator in header ---
+  updateModeIndicator(modeName) {
+    this.els.modeIndicator.textContent = modeName;
+  },
+
+  // --- Persona modal ---
   showPersonaModal(agent) {
     const beliefsHtml = agent.beliefs.map(b => `<li>「${b}」</li>`).join('');
     const modesHtml = agent.modes.map(m =>
       `<span class="persona-mode-tag" style="color:${agent.color}; border-color:${agent.color};">
-        ${m.emoji} ${m.name}
+        ${m.name}
       </span>`
     ).join('');
 
     this.els.personaDetail.innerHTML = `
       <div class="persona-header">
-        <div class="persona-icon-large" style="background:${agent.glow}; color:${agent.color};">
-          ${agent.icon}
+        <div class="persona-avatar-lg" style="background:${agent.gradient};">
+          ${agent.initial}
         </div>
         <div class="persona-name" style="color:${agent.color};">${agent.name}</div>
         <div class="persona-role">${agent.role} — ${agent.title}</div>
@@ -215,11 +251,12 @@ const UI = {
     this.els.personaModal.classList.add('active');
   },
 
+  // --- Map modal ---
   showMapModal() {
-    let itemsHtml = AGENTS.map(a => `
+    const itemsHtml = AGENTS.map(a => `
       <div class="map-item">
-        <div class="map-icon" style="background:${a.glow}; color:${a.color};">${a.icon}</div>
-        <div class="map-info">
+        <div class="map-avatar" style="background:${a.gradient};">${a.initial}</div>
+        <div>
           <div class="map-name" style="color:${a.color};">${a.name}（${a.title}）</div>
           <div class="map-function">${a.mapFunction}</div>
         </div>
@@ -239,6 +276,7 @@ const UI = {
     this.els.mapModal.classList.remove('active');
   },
 
+  // --- Session list ---
   renderSessionList(sessions, activeId, onSelect) {
     this.els.sessionList.innerHTML = '';
     sessions.forEach(s => {
@@ -265,9 +303,9 @@ const UI = {
   },
 
   escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML.replace(/\n/g, '<br>');
+    const d = document.createElement('div');
+    d.textContent = text;
+    return d.innerHTML.replace(/\n/g, '<br>');
   },
 
   getInputValue() {
