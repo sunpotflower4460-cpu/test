@@ -1,24 +1,52 @@
 // ==========================================
-// じぶん会議 - 会話ロジック（モック版）
+// じぶん会議 – 会話ロジック v2.0
+// localStorage 永続化 + モード推定通知
 // ==========================================
+
+const STORAGE_KEY = 'jibun-kaigi-sessions';
 
 const Chat = {
   sessions: [],
   activeSessionId: null,
 
   init() {
-    this.createNewSession();
+    this.load();
+    if (this.sessions.length === 0) {
+      this.createNewSession();
+    } else {
+      this.activeSessionId = this.sessions[0].id;
+    }
   },
 
+  // --- Persistence ---
+  save() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(this.sessions));
+    } catch (e) { /* quota exceeded – silent fail */ }
+  },
+
+  load() {
+    try {
+      const data = localStorage.getItem(STORAGE_KEY);
+      if (data) {
+        this.sessions = JSON.parse(data);
+      }
+    } catch (e) {
+      this.sessions = [];
+    }
+  },
+
+  // --- Sessions ---
   createNewSession() {
     const session = {
       id: 'session-' + Date.now(),
       title: '新しい会議',
       messages: [],
-      createdAt: new Date(),
+      createdAt: new Date().toISOString(),
     };
     this.sessions.unshift(session);
     this.activeSessionId = session.id;
+    this.save();
     return session;
   },
 
@@ -31,6 +59,7 @@ const Chat = {
     return this.getActiveSession();
   },
 
+  // --- Messages ---
   addMessage(role, agentId, text, mode) {
     const session = this.getActiveSession();
     if (!session) return;
@@ -42,18 +71,21 @@ const Chat = {
       text,
       mode,
       reactions: [],
-      timestamp: new Date(),
+      timestamp: new Date().toISOString(),
     };
 
     session.messages.push(msg);
 
+    // Auto-title from first user message
     if (role === 'user' && session.messages.filter(m => m.role === 'user').length === 1) {
       session.title = text.length > 20 ? text.substring(0, 20) + '…' : text;
     }
 
+    this.save();
     return msg;
   },
 
+  // --- Response generation ---
   async generateResponse(agentId, userText, mode) {
     const agent = getAgent(agentId);
     if (!agent) return null;
@@ -72,70 +104,65 @@ const Chat = {
   estimateMode(agent, text) {
     const modes = agent.modes;
 
-    if (/つらい|苦しい|泣|死|限界|もう無理|やめたい/.test(text)) {
-      const painMode = modes.find(m =>
+    // Pain / crisis
+    if (/つらい|苦しい|泣|死にたい|限界|もう無理|やめたい|消えたい/.test(text)) {
+      const m = modes.find(m =>
         ['comfort', 'dawn', 'treat', 'breath', 'silence'].includes(m.key)
       );
-      if (painMode) return painMode;
+      if (m) return { ...m, reason: '苦痛のキーワードを検出' };
     }
 
-    if (/やりたい|挑戦|始め|夢|目標/.test(text)) {
-      const actionMode = modes.find(m =>
+    // Action / dream
+    if (/やりたい|挑戦|始め|夢|目標|やるぞ/.test(text)) {
+      const m = modes.find(m =>
         ['ignite', 'design', 'adventure', 'essence', 'execute'].includes(m.key)
       );
-      if (actionMode) return actionMode;
+      if (m) return { ...m, reason: '行動・目標のキーワードを検出' };
     }
 
+    // Confusion
     if (/どうしたら|わからない|迷|悩|混乱/.test(text)) {
-      const confuseMode = modes.find(m =>
+      const m = modes.find(m =>
         ['mirror', 'organize', 'lighthouse', 'wind', 'naive', 'wall'].includes(m.key)
       );
-      if (confuseMode) return confuseMode;
+      if (m) return { ...m, reason: '迷い・混乱のキーワードを検出' };
     }
 
-    if (/疲れ|休み|しんどい|無理/.test(text)) {
-      const restMode = modes.find(m =>
+    // Fatigue
+    if (/疲れ|休み|しんどい|だるい/.test(text)) {
+      const m = modes.find(m =>
         ['release', 'breath', 'treat', 'comfort'].includes(m.key)
       );
-      if (restMode) return restMode;
+      if (m) return { ...m, reason: '疲労のキーワードを検出' };
     }
 
-    if (/嬉しい|できた|やった|ありがとう|感謝/.test(text)) {
-      const joyMode = modes.find(m =>
+    // Joy
+    if (/嬉しい|できた|やった|ありがとう|感謝|楽しい/.test(text)) {
+      const m = modes.find(m =>
         ['blessing', 'celebrate', 'fullpower', 'back'].includes(m.key)
       );
-      if (joyMode) return joyMode;
+      if (m) return { ...m, reason: '喜びのキーワードを検出' };
     }
 
-    if (/べき|しなきゃ|義務|責任/.test(text)) {
-      const shouldMode = modes.find(m =>
+    // Obligation
+    if (/べき|しなきゃ|義務|責任|しないと/.test(text)) {
+      const m = modes.find(m =>
         ['release', 'naive', 'juggle', 'asis'].includes(m.key)
       );
-      if (shouldMode) return shouldMode;
+      if (m) return { ...m, reason: '義務感のキーワードを検出' };
     }
 
-    return modes[0];
+    return { ...modes[0], reason: null };
   },
 
-  async generateMasterResponse(userText, mode) {
-    const responses = [];
-    for (const agent of AGENTS) {
-      const result = await this.generateResponse(agent.id, userText, mode);
-      if (result) {
-        responses.push(result);
-      }
-    }
-    return responses;
-  },
-
+  // --- Reactions ---
   generateReactions(speakerId, userText) {
     const reactions = [];
-    const otherAgents = AGENTS.filter(a => a.id !== speakerId);
+    const others = AGENTS.filter(a => a.id !== speakerId);
+    const count = 2 + Math.floor(Math.random() * 2);
+    const picked = others.sort(() => Math.random() - 0.5).slice(0, count);
 
-    const reactionCount = 2 + Math.floor(Math.random() * 2);
-    const shuffled = otherAgents.sort(() => Math.random() - 0.5).slice(0, reactionCount);
-
-    const reactionTexts = {
+    const texts = {
       ray: ['……', '静かに頷く', '映している'],
       joe: ['いいね！', 'そうだ！', '最高！'],
       mina: ['うん', 'わかる', 'そうだね'],
@@ -145,11 +172,11 @@ const Chat = {
       tom: ['あはは', 'おもしろ', 'へ〜'],
     };
 
-    shuffled.forEach(a => {
-      const texts = reactionTexts[a.id] || ['……'];
+    picked.forEach(a => {
+      const pool = texts[a.id] || ['……'];
       reactions.push({
         agentId: a.id,
-        text: texts[Math.floor(Math.random() * texts.length)],
+        text: pool[Math.floor(Math.random() * pool.length)],
       });
     });
 
