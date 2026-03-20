@@ -768,7 +768,9 @@ body {
         height: 36px;
         font-size: 0.6rem;
     }
-    #mode-selector {
-        display: none;
+            #mode-selector {
+        display: flex;
+    }
+
     }
 }
