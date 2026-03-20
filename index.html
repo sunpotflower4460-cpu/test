@@ -2,33 +2,86 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>テスト</title>
-    <style>
-        body {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
-            background: #1a1a2e;
-            color: #eee;
-            font-family: sans-serif;
-        }
-        .card {
-            background: #16213e;
-            padding: 40px;
-            border-radius: 16px;
-            text-align: center;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
-        }
-        h1 { color: #e94560; }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>じぶん会議</title>
+    <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-    <div class="card">
-        <h1>TEST</h1>
-        <p>スマホからpushできた！</p>
+    <div id="app">
+        <!-- スプラッシュ画面 -->
+        <div id="splash-screen" class="screen active">
+            <div class="splash-content">
+                <h1 class="splash-title">じぶん会議</h1>
+                <p class="splash-subtitle">導かない。照らすだけ。歩くのは本人。</p>
+                <button id="start-btn" class="btn-primary">はじめる</button>
+            </div>
+        </div>
+
+        <!-- メイン画面 -->
+        <div id="main-screen" class="screen">
+            <!-- ヘッダー -->
+            <header id="header">
+                <button id="menu-btn" class="icon-btn">☰</button>
+                <h2 id="session-title">新しい会議</h2>
+                <div id="mode-selector">
+                    <button class="mode-btn active" data-mode="short">一閃</button>
+                    <button class="mode-btn" data-mode="medium">対話</button>
+                    <button class="mode-btn" data-mode="long">深淵</button>
+                </div>
+            </header>
+
+            <!-- サイドバー -->
+            <div id="sidebar" class="sidebar-closed">
+                <div class="sidebar-header">
+                    <h3>セッション</h3>
+                    <button id="sidebar-close" class="icon-btn">✕</button>
+                </div>
+                <button id="new-session-btn" class="btn-secondary">＋ 新しい会議</button>
+                <ul id="session-list"></ul>
+                <div class="sidebar-footer">
+                    <button id="persona-map-btn" class="btn-ghost">7人の関係性</button>
+                </div>
+            </div>
+            <div id="sidebar-overlay"></div>
+
+            <!-- チャットエリア -->
+            <div id="chat-area">
+                <div id="messages"></div>
+            </div>
+
+            <!-- キャラクター選択バー -->
+            <div id="agent-bar">
+                <div id="agent-icons"></div>
+            </div>
+
+            <!-- 入力エリア -->
+            <div id="input-area">
+                <textarea id="user-input" placeholder="今、何を感じていますか？" rows="1"></textarea>
+                <button id="send-btn" class="icon-btn send-btn" disabled>↑</button>
+            </div>
+        </div>
+
+        <!-- ペルソナ詳細モーダル -->
+        <div id="persona-modal" class="modal">
+            <div class="modal-content">
+                <button class="modal-close icon-btn">✕</button>
+                <div id="persona-detail"></div>
+            </div>
+        </div>
+
+        <!-- 関係性マップモーダル -->
+        <div id="map-modal" class="modal">
+            <div class="modal-content">
+                <button class="modal-close icon-btn">✕</button>
+                <div id="relationship-map"></div>
+            </div>
+        </div>
     </div>
+
+    <script src="js/agents.js"></script>
+    <script src="js/modes.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/chat.js"></script>
+    <script src="js/app.js"></script>
 </body>
 </html>
