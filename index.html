@@ -1,87 +1,139 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>じぶん会議</title>
-    <link rel="stylesheet" href="css/style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>じぶん会議</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div id="app">
-        <!-- スプラッシュ画面 -->
-        <div id="splash-screen" class="screen active">
-            <div class="splash-content">
-                <h1 class="splash-title">じぶん会議</h1>
-                <p class="splash-subtitle">導かない。照らすだけ。歩くのは本人。</p>
-                <button id="start-btn" class="btn-primary">はじめる</button>
-            </div>
+  <div id="app">
+
+    <!-- スプラッシュ画面 -->
+    <div id="splash-screen" class="screen active">
+      <div class="splash-content">
+        <div class="splash-orb"></div>
+        <h1 class="splash-title">じぶん会議</h1>
+        <p class="splash-subtitle">導かない。照らすだけ。歩くのは本人。</p>
+        <div class="splash-desc">
+          <p>7人の視点があなたの内側を照らします。</p>
+          <p>答えを出すのは、いつもあなた自身です。</p>
         </div>
-
-        <!-- メイン画面 -->
-        <div id="main-screen" class="screen">
-            <!-- ヘッダー -->
-            <header id="header">
-                <button id="menu-btn" class="icon-btn">☰</button>
-                <h2 id="session-title">新しい会議</h2>
-                <div id="mode-selector">
-                    <button class="mode-btn active" data-mode="short">一閃</button>
-                    <button class="mode-btn" data-mode="medium">対話</button>
-                    <button class="mode-btn" data-mode="long">深淵</button>
-                </div>
-            </header>
-
-            <!-- サイドバー -->
-            <div id="sidebar" class="sidebar-closed">
-                <div class="sidebar-header">
-                    <h3>セッション</h3>
-                    <button id="sidebar-close" class="icon-btn">✕</button>
-                </div>
-                <button id="new-session-btn" class="btn-secondary">＋ 新しい会議</button>
-                <ul id="session-list"></ul>
-                <div class="sidebar-footer">
-                    <button id="persona-map-btn" class="btn-ghost">7人の関係性</button>
-                </div>
-            </div>
-            <div id="sidebar-overlay"></div>
-
-            <!-- チャットエリア -->
-            <div id="chat-area">
-                <div id="messages"></div>
-            </div>
-
-            <!-- キャラクター選択バー -->
-            <div id="agent-bar">
-                <div id="agent-icons"></div>
-            </div>
-
-            <!-- 入力エリア -->
-            <div id="input-area">
-                <textarea id="user-input" placeholder="今、何を感じていますか？" rows="1"></textarea>
-                <button id="send-btn" class="icon-btn send-btn" disabled>↑</button>
-            </div>
-        </div>
-
-        <!-- ペルソナ詳細モーダル -->
-        <div id="persona-modal" class="modal">
-            <div class="modal-content">
-                <button class="modal-close icon-btn">✕</button>
-                <div id="persona-detail"></div>
-            </div>
-        </div>
-
-        <!-- 関係性マップモーダル -->
-        <div id="map-modal" class="modal">
-            <div class="modal-content">
-                <button class="modal-close icon-btn">✕</button>
-                <div id="relationship-map"></div>
-            </div>
-        </div>
+        <button id="start-btn" class="btn-start">はじめる</button>
+      </div>
     </div>
 
-    <script src="js/agents.js"></script>
-    <script src="js/modes.js"></script>
-    <script src="js/ui.js"></script>
-    <script src="js/chat.js"></script>
-    <script src="js/app.js"></script>
+    <!-- メイン画面 -->
+    <div id="main-screen" class="screen">
+
+      <!-- ヘッダー -->
+      <header id="header">
+        <button id="menu-btn" class="icon-btn" aria-label="メニュー">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <rect y="3" width="20" height="2" rx="1" fill="currentColor"/>
+            <rect y="9" width="20" height="2" rx="1" fill="currentColor"/>
+            <rect y="15" width="20" height="2" rx="1" fill="currentColor"/>
+          </svg>
+        </button>
+        <div id="header-center">
+          <span id="session-title">新しい会議</span>
+          <span id="mode-indicator" class="mode-indicator"></span>
+        </div>
+        <button id="map-btn" class="icon-btn" aria-label="関係マップ">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.5" fill="none"/>
+            <circle cx="10" cy="6" r="1.5" fill="currentColor"/>
+            <circle cx="6" cy="13" r="1.5" fill="currentColor"/>
+            <circle cx="14" cy="13" r="1.5" fill="currentColor"/>
+            <line x1="10" y1="7.5" x2="6.5" y2="11.5" stroke="currentColor" stroke-width="1"/>
+            <line x1="10" y1="7.5" x2="13.5" y2="11.5" stroke="currentColor" stroke-width="1"/>
+            <line x1="7" y1="13" x2="13" y2="13" stroke="currentColor" stroke-width="1"/>
+          </svg>
+        </button>
+      </header>
+
+      <!-- サイドバー -->
+      <div id="sidebar-overlay"></div>
+      <nav id="sidebar">
+        <div class="sidebar-header">
+          <h3>セッション</h3>
+          <button id="sidebar-close" class="icon-btn" aria-label="閉じる">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+              <line x1="4" y1="4" x2="14" y2="14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+              <line x1="14" y1="4" x2="4" y2="14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+          </button>
+        </div>
+        <button id="new-session-btn" class="btn-new-session">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <line x1="7" y1="2" x2="7" y2="12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            <line x1="2" y1="7" x2="12" y2="7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+          新しい会議
+        </button>
+        <ul id="session-list"></ul>
+        <div class="sidebar-footer">
+          <div id="mode-selector">
+            <button class="mode-btn active" data-mode="short">一閃</button>
+            <button class="mode-btn" data-mode="medium">対話</button>
+            <button class="mode-btn" data-mode="long">深淵</button>
+          </div>
+        </div>
+      </nav>
+
+      <!-- チャットエリア -->
+      <main id="chat-area">
+        <div id="messages"></div>
+      </main>
+
+      <!-- エージェント選択バー -->
+      <div id="agent-bar">
+        <div id="agent-icons"></div>
+      </div>
+
+      <!-- 入力エリア -->
+      <div id="input-area">
+        <div class="input-wrapper">
+          <textarea id="user-input" placeholder="ここに書く…" rows="1"></textarea>
+          <button id="send-btn" class="send-btn" disabled aria-label="送信">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+              <path d="M3 15L15 9L3 3V7.5L10.5 9L3 10.5V15Z" fill="currentColor"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ペルソナ詳細モーダル -->
+    <div id="persona-modal" class="modal">
+      <div class="modal-backdrop"></div>
+      <div class="modal-sheet">
+        <div class="modal-handle"></div>
+        <div id="persona-detail"></div>
+      </div>
+    </div>
+
+    <!-- 関係性マップモーダル -->
+    <div id="map-modal" class="modal">
+      <div class="modal-backdrop"></div>
+      <div class="modal-sheet">
+        <div class="modal-handle"></div>
+        <div id="relationship-map"></div>
+      </div>
+    </div>
+
+    <!-- モード変更トースト -->
+    <div id="mode-toast" class="toast"></div>
+
+  </div>
+
+  <script src="js/agents.js"></script>
+  <script src="js/modes.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/chat.js"></script>
+  <script src="js/app.js"></script>
 </body>
 </html>
