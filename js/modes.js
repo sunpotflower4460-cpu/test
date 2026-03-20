@@ -1,5 +1,5 @@
 // ==========================================
-// じぶん会議 - モード制御（一閃 / 対話 / 深淵）
+// じぶん会議 – モード制御 v2.0
 // ==========================================
 
 const RESPONSE_MODES = {
@@ -31,6 +31,8 @@ let currentMode = 'short';
 function setResponseMode(mode) {
   if (RESPONSE_MODES[mode]) {
     currentMode = mode;
+    // Apply body class for theme transition
+    document.body.className = 'mode-' + mode;
   }
 }
 
