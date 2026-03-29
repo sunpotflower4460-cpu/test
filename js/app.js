@@ -1,6 +1,6 @@
 // ==========================================
-// じぶん会議 – メインアプリ v3.0
-// レガシー応答 + セッション削除対応
+// じぶん会議 – メインアプリ v4.0
+// Light/Dark + Native App Feel
 // ==========================================
 
 (function () {
@@ -31,18 +31,31 @@
 
   function bindEvents() {
     // Splash → Main
-    UI.els.startBtn.addEventListener('click', () => {
-      UI.showMain();
-      UI.els.userInput.focus();
+    UI.els.startBtn.addEventListener('click', (e) => {
+      UI.addRipple(UI.els.startBtn, e);
+      setTimeout(() => {
+        UI.showMain();
+        setTimeout(() => UI.els.userInput.focus(), 600);
+      }, 150);
+    });
+
+    // Theme toggle
+    UI.els.themeToggleBtn.addEventListener('click', (e) => {
+      UI.addRipple(UI.els.themeToggleBtn, e);
+      UI.toggleTheme();
     });
 
     // Sidebar
-    UI.els.menuBtn.addEventListener('click', () => UI.openSidebar());
+    UI.els.menuBtn.addEventListener('click', (e) => {
+      UI.addRipple(UI.els.menuBtn, e);
+      UI.openSidebar();
+    });
     UI.els.sidebarClose.addEventListener('click', () => UI.closeSidebar());
     UI.els.sidebarOverlay.addEventListener('click', () => UI.closeSidebar());
 
     // New session
-    UI.els.newSessionBtn.addEventListener('click', () => {
+    UI.els.newSessionBtn.addEventListener('click', (e) => {
+      UI.addRipple(UI.els.newSessionBtn, e);
       Chat.createNewSession();
       UI.clearMessages();
       UI.setSessionTitle('新しい会議');
@@ -53,7 +66,10 @@
     });
 
     // Send
-    UI.els.sendBtn.addEventListener('click', handleSend);
+    UI.els.sendBtn.addEventListener('click', (e) => {
+      UI.addRipple(UI.els.sendBtn, e);
+      handleSend();
+    });
     UI.els.userInput.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
@@ -63,7 +79,8 @@
 
     // Mode buttons
     document.querySelectorAll('.mode-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
+      btn.addEventListener('click', (e) => {
+        UI.addRipple(btn, e);
         const prev = currentMode;
         document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
@@ -80,7 +97,8 @@
     });
 
     // Map button
-    UI.els.mapBtn.addEventListener('click', () => {
+    UI.els.mapBtn.addEventListener('click', (e) => {
+      UI.addRipple(UI.els.mapBtn, e);
       UI.showMapModal();
     });
 
@@ -184,7 +202,6 @@
     }
 
     await handleAgentResponse(targetId, text);
-
     isGenerating = false;
   }
 
@@ -193,7 +210,6 @@
     if (!agent) return;
 
     UI.showTypingIndicator(agent);
-
     await delay(700 + Math.random() * 1000);
 
     const result = await Chat.generateResponse(agentId, userText, currentMode);
