@@ -1,6 +1,6 @@
 // ==========================================
-// じぶん会議 – 会話ロジック v2.0
-// localStorage 永続化 + モード推定通知
+// じぶん会議 – 会話ロジック v3.0
+// localStorage 永続化 + セッション削除
 // ==========================================
 
 const STORAGE_KEY = 'jibun-kaigi-sessions';
@@ -59,6 +59,24 @@ const Chat = {
     return this.getActiveSession();
   },
 
+  deleteSession(sessionId) {
+    const index = this.sessions.findIndex(s => s.id === sessionId);
+    if (index === -1) return;
+
+    this.sessions.splice(index, 1);
+
+    if (this.activeSessionId === sessionId) {
+      if (this.sessions.length > 0) {
+        this.activeSessionId = this.sessions[0].id;
+      } else {
+        this.createNewSession();
+      }
+    }
+
+    this.save();
+    return this.getActiveSession();
+  },
+
   // --- Messages ---
   addMessage(role, agentId, text, mode) {
     const session = this.getActiveSession();
@@ -102,7 +120,7 @@ const Chat = {
   },
 
   estimateMode(agent, text) {
-    const modes = agent.modes;
+    const modes = agent._legacy_modes;
 
     // Pain / crisis
     if (/つらい|苦しい|泣|死にたい|限界|もう無理|やめたい|消えたい/.test(text)) {
