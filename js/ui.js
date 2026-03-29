@@ -1,10 +1,11 @@
 // ==========================================
-// じぶん会議 – UI v2.0
-// イニシャルアバター, localStorage, toast
+// じぶん会議 – UI v3.0
+// 新ペルソナモーダル + スクロールロック + セッション削除
 // ==========================================
 
 const UI = {
   els: {},
+  _scrollLockY: 0,
 
   init() {
     this.els = {
@@ -84,7 +85,7 @@ const UI = {
       this.els.agentIcons.appendChild(el);
     });
 
-    // Random button (replaces 全員)
+    // Random button
     const randEl = document.createElement('div');
     randEl.className = 'agent-icon agent-icon--random' + (selectedId === 'random' ? ' selected' : '');
     randEl.innerHTML = `?<span class="agent-icon-label">ランダム</span>`;
@@ -174,7 +175,7 @@ const UI = {
     if (el) el.remove();
   },
 
-  // --- Focus effect (for sequential responses) ---
+  // --- Focus effect ---
   setFocusedMessage(messageEl) {
     this.els.messages.classList.add('focusing');
     document.querySelectorAll('#messages .message').forEach(m => m.classList.remove('focused'));
@@ -195,19 +196,36 @@ const UI = {
     }, duration);
   },
 
-  // --- Mode indicator in header ---
+  // --- Mode indicator ---
   updateModeIndicator(modeName) {
     this.els.modeIndicator.textContent = modeName;
   },
 
   // --- Persona modal ---
   showPersonaModal(agent) {
-    const beliefsHtml = agent.beliefs.map(b => `<li>「${b}」</li>`).join('');
-    const modesHtml = agent.modes.map(m =>
-      `<span class="persona-mode-tag" style="color:${agent.color}; border-color:${agent.color};">
-        ${m.name}
-      </span>`
+    const beliefsHtml = agent.beliefs.map(b =>
+      `<li>「${typeof b === 'object' ? b.seed : b}」</li>`
     ).join('');
+
+    const approachHtml = agent.guidance
+      ? agent.guidance.approach.map(a =>
+          `<li class="persona-approach-item">${a}</li>`
+        ).join('')
+      : '';
+
+    const permissionHtml = agent.guidance && agent.guidance.permission
+      ? agent.guidance.permission.map(p =>
+          `<span class="persona-permission-tag">${p}</span>`
+        ).join('')
+      : '';
+
+    const strengthHtml = agent.strength
+      ? `<div class="persona-strength">
+           <span class="strength-label">得意な深さ:</span> ${agent.strength.primaryLayers.join(', ')}<br>
+           <span class="strength-label">得意な領域:</span> ${agent.strength.primaryDomains.join(', ')}<br>
+           <span class="strength-label">神経親和:</span> ${agent.strength.nervousAffinity}
+         </div>`
+      : '';
 
     this.els.personaDetail.innerHTML = `
       <div class="persona-header">
@@ -229,26 +247,45 @@ const UI = {
 
       <div class="persona-section">
         <div class="persona-section-title">存在の核</div>
-        <p>${agent.core.essence}</p>
+        <p><strong>${agent.core.symbol}</strong> — ${agent.core.essence}</p>
+        <p style="margin-top:6px;">願い: ${agent.core.wish}</p>
+        <p style="margin-top:4px;">痛み: ${agent.core.pain}</p>
+      </div>
+
+      ${agent.guidance ? `
+      <div class="persona-section">
+        <div class="persona-section-title">トーン</div>
+        <p>${agent.guidance.tone}</p>
       </div>
 
       <div class="persona-section">
-        <div class="persona-section-title">根源的な願い</div>
-        <p>${agent.core.wish}</p>
+        <div class="persona-section-title">許可</div>
+        <div class="persona-permissions">${permissionHtml}</div>
       </div>
+
+      <div class="persona-section">
+        <div class="persona-section-title">接し方</div>
+        <ul class="persona-approach">${approachHtml}</ul>
+      </div>
+      ` : ''}
 
       <div class="persona-section">
         <div class="persona-section-title">信念体系</div>
         <ul class="persona-beliefs">${beliefsHtml}</ul>
       </div>
 
+      ${strengthHtml ? `
       <div class="persona-section">
-        <div class="persona-section-title">関係性のモード</div>
-        <div class="persona-modes">${modesHtml}</div>
+        <div class="persona-section-title">得意な領域</div>
+        ${strengthHtml}
       </div>
+      ` : ''}
     `;
 
     this.els.personaModal.classList.add('active');
+    this._scrollLockY = window.scrollY;
+    document.body.classList.add('modal-open');
+    document.body.style.top = -this._scrollLockY + 'px';
   },
 
   // --- Map modal ---
@@ -269,21 +306,43 @@ const UI = {
     `;
 
     this.els.mapModal.classList.add('active');
+    this._scrollLockY = window.scrollY;
+    document.body.classList.add('modal-open');
+    document.body.style.top = -this._scrollLockY + 'px';
   },
 
   closeModals() {
     this.els.personaModal.classList.remove('active');
     this.els.mapModal.classList.remove('active');
+    document.body.classList.remove('modal-open');
+    document.body.style.top = '';
+    window.scrollTo(0, this._scrollLockY || 0);
   },
 
   // --- Session list ---
-  renderSessionList(sessions, activeId, onSelect) {
+  renderSessionList(sessions, activeId, onSelect, onDelete) {
     this.els.sessionList.innerHTML = '';
     sessions.forEach(s => {
       const li = document.createElement('li');
       li.className = s.id === activeId ? 'active' : '';
-      li.textContent = s.title;
-      li.addEventListener('click', () => onSelect(s.id));
+
+      const titleSpan = document.createElement('span');
+      titleSpan.className = 'session-title-text';
+      titleSpan.textContent = s.title;
+      titleSpan.addEventListener('click', () => onSelect(s.id));
+
+      const deleteBtn = document.createElement('button');
+      deleteBtn.className = 'session-delete-btn';
+      deleteBtn.innerHTML = '×';
+      deleteBtn.setAttribute('aria-label', '削除');
+      deleteBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (sessions.length <= 1) return;
+        onDelete(s.id);
+      });
+
+      li.appendChild(titleSpan);
+      li.appendChild(deleteBtn);
       this.els.sessionList.appendChild(li);
     });
   },
