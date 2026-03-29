@@ -1,15 +1,26 @@
 // ==========================================
-// じぶん会議 – UI v4.0
-// Light/Dark + Native App Feel
+// じぶん会議 – UI v5.0
+// Claude Code fixes:
+//   - XSS: escapeHtml() on all templates
+//   - Memory leak: event delegation for agent bar
+//   - Dead code: setFocusedMessage/clearFocus removed
 // ==========================================
 
 const UI = {
   els: {},
   _scrollLockY: 0,
+  _agentBarBound: false,
+  _onAgentSelect: null,
+  _onAgentLongPress: null,
 
   init() {
     this.els = {
       app: document.getElementById('app'),
+      onboardingScreen: document.getElementById('onboarding-screen'),
+      onboardingSlides: document.getElementById('onboarding-slides'),
+      onboardingDots: document.getElementById('onboarding-dots'),
+      onboardingNextBtn: document.getElementById('onboarding-next-btn'),
+      onboardingSkipBtn: document.getElementById('onboarding-skip-btn'),
       splashScreen: document.getElementById('splash-screen'),
       mainScreen: document.getElementById('main-screen'),
       startBtn: document.getElementById('start-btn'),
@@ -26,6 +37,7 @@ const UI = {
       sessionList: document.getElementById('session-list'),
       chatArea: document.getElementById('chat-area'),
       messages: document.getElementById('messages'),
+      welcomePrompt: document.getElementById('welcome-prompt'),
       agentBar: document.getElementById('agent-bar'),
       agentIcons: document.getElementById('agent-icons'),
       inputArea: document.getElementById('input-area'),
@@ -39,6 +51,15 @@ const UI = {
     };
 
     this.initTheme();
+    this.initAgentBarEvents();
+  },
+
+  // --- Onboarding ---
+  hasSeenOnboarding() {
+    return localStorage.getItem('jibun-onboarding-done') === 'true';
+  },
+  markOnboardingDone() {
+    localStorage.setItem('jibun-onboarding-done', 'true');
   },
 
   // --- Theme ---
@@ -47,7 +68,6 @@ const UI = {
     if (saved) {
       document.documentElement.setAttribute('data-theme', saved);
     }
-    // If no saved preference, CSS @media handles it automatically
   },
 
   toggleTheme() {
@@ -61,18 +81,28 @@ const UI = {
     } else if (current === 'light') {
       next = 'dark';
     } else {
-      // No explicit setting, using OS default. Toggle to opposite.
       next = isDarkOS ? 'light' : 'dark';
     }
 
     root.setAttribute('data-theme', next);
     localStorage.setItem('jibun-theme', next);
 
-    // Update theme-color meta
     const meta = document.querySelector('meta[name="theme-color"]:not([media])') ||
                  document.querySelector('meta[name="theme-color"]');
     if (meta) {
       meta.setAttribute('content', next === 'light' ? '#f5f4f1' : '#0b0b10');
+    }
+  },
+
+  // --- Welcome prompt ---
+  showWelcome() {
+    if (this.els.welcomePrompt) {
+      this.els.welcomePrompt.style.display = 'flex';
+    }
+  },
+  hideWelcome() {
+    if (this.els.welcomePrompt) {
+      this.els.welcomePrompt.style.display = 'none';
     }
   },
 
@@ -91,6 +121,7 @@ const UI = {
 
   // --- Ripple effect ---
   addRipple(el, e) {
+    if (!el || !e) return;
     const rect = el.getBoundingClientRect();
     const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
     const y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
@@ -118,72 +149,100 @@ const UI = {
     this.els.sidebarOverlay.classList.remove('open');
   },
 
-  // --- Agent bar ---
+  // --- Agent bar (event delegation) ---
+  initAgentBarEvents() {
+    if (this._agentBarBound) return;
+    this._agentBarBound = true;
+
+    const container = this.els.agentIcons;
+    let pressTimer = null;
+
+    container.addEventListener('click', (e) => {
+      const card = e.target.closest('.agent-card');
+      if (!card) return;
+      const agentId = card.dataset.agentId;
+      if (!agentId) return;
+      this.addRipple(card.querySelector('.agent-card-avatar'), e);
+      if (this._onAgentSelect) this._onAgentSelect(agentId);
+    });
+
+    container.addEventListener('touchstart', (e) => {
+      const card = e.target.closest('.agent-card');
+      if (!card) return;
+      const agentId = card.dataset.agentId;
+      if (!agentId || agentId === 'random') return;
+      pressTimer = setTimeout(() => {
+        e.preventDefault();
+        if (this._onAgentLongPress) this._onAgentLongPress(agentId);
+      }, 500);
+    }, { passive: false });
+
+    container.addEventListener('touchend', () => clearTimeout(pressTimer));
+    container.addEventListener('touchmove', () => clearTimeout(pressTimer));
+
+    container.addEventListener('dblclick', (e) => {
+      const card = e.target.closest('.agent-card');
+      if (!card) return;
+      const agentId = card.dataset.agentId;
+      if (!agentId || agentId === 'random') return;
+      if (this._onAgentLongPress) this._onAgentLongPress(agentId);
+    });
+  },
+
   renderAgentIcons(selectedId, onSelect, onLongPress) {
+    this._onAgentSelect = onSelect;
+    this._onAgentLongPress = onLongPress;
     this.els.agentIcons.innerHTML = '';
 
     AGENTS.forEach(agent => {
       const el = document.createElement('div');
-      el.className = 'agent-icon' + (selectedId === agent.id ? ' selected' : '');
-      el.style.background = agent.gradient;
-      el.innerHTML = `
-        ${agent.initial}
-        <span class="agent-icon-label">${agent.name}</span>
-      `;
-
-      el.addEventListener('click', (e) => {
-        this.addRipple(el, e);
-        onSelect(agent.id);
-      });
-
-      let pressTimer;
-      el.addEventListener('touchstart', (e) => {
-        pressTimer = setTimeout(() => {
-          e.preventDefault();
-          onLongPress(agent.id);
-        }, 500);
-      }, { passive: false });
-      el.addEventListener('touchend', () => clearTimeout(pressTimer));
-      el.addEventListener('touchmove', () => clearTimeout(pressTimer));
-      el.addEventListener('dblclick', () => onLongPress(agent.id));
-
+      el.className = 'agent-card' + (selectedId === agent.id ? ' selected' : '');
+      el.dataset.agentId = agent.id;
+      el.innerHTML =
+        '<div class="agent-card-avatar" style="background:' + agent.gradient + ';">' +
+          this.escapeHtml(agent.initial) +
+        '</div>' +
+        '<span class="agent-card-label">' + this.escapeHtml(agent.name) + '</span>' +
+        '<span class="agent-card-subtitle">' + this.escapeHtml(agent.subtitle || agent.title) + '</span>';
       this.els.agentIcons.appendChild(el);
     });
 
+    // Random card
     const randEl = document.createElement('div');
-    randEl.className = 'agent-icon agent-icon--random' + (selectedId === 'random' ? ' selected' : '');
-    randEl.innerHTML = `?<span class="agent-icon-label">ランダム</span>`;
-    randEl.addEventListener('click', (e) => {
-      this.addRipple(randEl, e);
-      onSelect('random');
-    });
+    randEl.className = 'agent-card agent-card--random' + (selectedId === 'random' ? ' selected' : '');
+    randEl.dataset.agentId = 'random';
+    randEl.innerHTML =
+      '<div class="agent-card-avatar">?</div>' +
+      '<span class="agent-card-label">ランダム</span>' +
+      '<span class="agent-card-subtitle">誰かが答える</span>';
     this.els.agentIcons.appendChild(randEl);
   },
 
   // --- Messages ---
   addUserMessage(text) {
+    this.hideWelcome();
     const div = document.createElement('div');
     div.className = 'message message-user';
-    div.innerHTML = `<div class="bubble">${this.escapeHtml(text)}</div>`;
+    div.innerHTML = '<div class="bubble">' + this.escapeHtml(text) + '</div>';
     this.els.messages.appendChild(div);
     this.scrollToBottom();
   },
 
   addAgentMessage(agent, text, mode) {
+    this.hideWelcome();
     const div = document.createElement('div');
-    div.className = `message message-agent ${agent.animClass}`;
-    const modeLabel = mode ? `<span class="agent-mode-label">— ${mode.name}</span>` : '';
+    div.className = 'message message-agent ' + this.escapeHtml(agent.animClass);
+    const modeLabel = mode ? '<span class="agent-mode-label">— ' + this.escapeHtml(mode.name) + '</span>' : '';
 
-    div.innerHTML = `
-      <div class="agent-label">
-        <div class="agent-avatar-sm" style="background:${agent.gradient};">
-          ${agent.initial}
-        </div>
-        <span class="agent-name-label" style="color:${agent.color};">${agent.name}</span>
-        ${modeLabel}
-      </div>
-      <div class="bubble ${agent.bubbleClass}">${this.escapeHtml(text)}</div>
-    `;
+    div.innerHTML =
+      '<div class="agent-label">' +
+        '<div class="agent-avatar-sm" style="background:' + agent.gradient + ';">' +
+          this.escapeHtml(agent.initial) +
+        '</div>' +
+        '<span class="agent-name-label" style="color:' + agent.color + ';">' + this.escapeHtml(agent.name) + '</span>' +
+        modeLabel +
+      '</div>' +
+      '<div class="bubble ' + this.escapeHtml(agent.bubbleClass) + '">' + this.escapeHtml(text) + '</div>';
 
     this.els.messages.appendChild(div);
     this.scrollToBottom();
@@ -202,10 +261,9 @@ const UI = {
       tag.style.background = agent.bg;
       tag.style.color = agent.color;
       tag.style.borderColor = agent.color;
-      tag.innerHTML = `
-        <span class="reaction-dot" style="background:${agent.color};"></span>
-        ${agent.name} ${r.text}
-      `;
+      tag.innerHTML =
+        '<span class="reaction-dot" style="background:' + agent.color + ';"></span>' +
+        this.escapeHtml(agent.name) + ' ' + this.escapeHtml(r.text);
       container.appendChild(tag);
     });
 
@@ -216,20 +274,19 @@ const UI = {
   // --- Typing ---
   showTypingIndicator(agent) {
     const div = document.createElement('div');
-    div.className = `message message-agent typing-message ${agent.animClass}`;
+    div.className = 'message message-agent typing-message ' + this.escapeHtml(agent.animClass);
     div.setAttribute('data-typing', agent.id);
 
-    div.innerHTML = `
-      <div class="agent-label">
-        <div class="agent-avatar-sm" style="background:${agent.gradient};">
-          ${agent.initial}
-        </div>
-        <span class="agent-name-label" style="color:${agent.color};">${agent.name}</span>
-      </div>
-      <div class="bubble ${agent.bubbleClass}">
-        <div class="typing-dots"><span></span><span></span><span></span></div>
-      </div>
-    `;
+    div.innerHTML =
+      '<div class="agent-label">' +
+        '<div class="agent-avatar-sm" style="background:' + agent.gradient + ';">' +
+          this.escapeHtml(agent.initial) +
+        '</div>' +
+        '<span class="agent-name-label" style="color:' + agent.color + ';">' + this.escapeHtml(agent.name) + '</span>' +
+      '</div>' +
+      '<div class="bubble ' + this.escapeHtml(agent.bubbleClass) + '">' +
+        '<div class="typing-dots"><span></span><span></span><span></span></div>' +
+      '</div>';
 
     this.els.messages.appendChild(div);
     this.scrollToBottom();
@@ -237,19 +294,8 @@ const UI = {
   },
 
   removeTypingIndicator(agentId) {
-    const el = this.els.messages.querySelector(`[data-typing="${agentId}"]`);
+    const el = this.els.messages.querySelector('[data-typing="' + agentId + '"]');
     if (el) el.remove();
-  },
-
-  // --- Focus ---
-  setFocusedMessage(messageEl) {
-    this.els.messages.classList.add('focusing');
-    document.querySelectorAll('#messages .message').forEach(m => m.classList.remove('focused'));
-    if (messageEl) messageEl.classList.add('focused');
-  },
-  clearFocus() {
-    this.els.messages.classList.remove('focusing');
-    document.querySelectorAll('#messages .message').forEach(m => m.classList.remove('focused'));
   },
 
   // --- Toast ---
@@ -267,86 +313,83 @@ const UI = {
     this.els.modeIndicator.textContent = modeName;
   },
 
-  // --- Persona modal ---
+  // --- Persona modal (all escaped) ---
   showPersonaModal(agent) {
     const beliefsHtml = agent.beliefs.map(b =>
-      `<li>「${typeof b === 'object' ? b.seed : b}」</li>`
+      '<li>「' + this.escapeHtml(typeof b === 'object' ? b.seed : b) + '」</li>'
     ).join('');
 
     const approachHtml = agent.guidance
       ? agent.guidance.approach.map(a =>
-          `<li class="persona-approach-item">${a}</li>`
+          '<li class="persona-approach-item">' + this.escapeHtml(a) + '</li>'
         ).join('')
       : '';
 
     const permissionHtml = agent.guidance && agent.guidance.permission
       ? agent.guidance.permission.map(p =>
-          `<span class="persona-permission-tag">${p}</span>`
+          '<span class="persona-permission-tag">' + this.escapeHtml(p) + '</span>'
         ).join('')
       : '';
 
     const strengthHtml = agent.strength
-      ? `<div class="persona-strength">
-           <span class="strength-label">得意な深さ:</span> ${agent.strength.primaryLayers.join(', ')}<br>
-           <span class="strength-label">得意な領域:</span> ${agent.strength.primaryDomains.join(', ')}<br>
-           <span class="strength-label">神経親和:</span> ${agent.strength.nervousAffinity}
-         </div>`
+      ? '<div class="persona-strength">' +
+           '<span class="strength-label">得意な深さ:</span> ' + this.escapeHtml(agent.strength.primaryLayers.join(', ')) + '<br>' +
+           '<span class="strength-label">得意な領域:</span> ' + this.escapeHtml(agent.strength.primaryDomains.join(', ')) + '<br>' +
+           '<span class="strength-label">神経親和:</span> ' + this.escapeHtml(agent.strength.nervousAffinity) +
+         '</div>'
       : '';
 
-    this.els.personaDetail.innerHTML = `
-      <div class="persona-header">
-        <div class="persona-avatar-lg" style="background:${agent.gradient};">
-          ${agent.initial}
-        </div>
-        <div class="persona-name" style="color:${agent.color};">${agent.name}</div>
-        <div class="persona-role">${agent.role} — ${agent.title}</div>
-      </div>
+    this.els.personaDetail.innerHTML =
+      '<div class="persona-header">' +
+        '<div class="persona-avatar-lg" style="background:' + agent.gradient + ';">' +
+          this.escapeHtml(agent.initial) +
+        '</div>' +
+        '<div class="persona-name" style="color:' + agent.color + ';">' + this.escapeHtml(agent.name) + '</div>' +
+        '<div class="persona-role">' + this.escapeHtml(agent.role) + ' — ' + this.escapeHtml(agent.title) + '</div>' +
+      '</div>' +
 
-      <div class="persona-section">
-        <div class="persona-section-title">存在の宣言</div>
-        <div class="persona-layer0">
-          <div class="persona-layer0-declaration">${agent.layer0.declaration}</div>
-          <p>${agent.layer0.identity}</p>
-          <p style="margin-top:8px;">${agent.layer0.mission}</p>
-        </div>
-      </div>
+      '<div class="persona-section">' +
+        '<div class="persona-section-title">存在の宣言</div>' +
+        '<div class="persona-layer0">' +
+          '<div class="persona-layer0-declaration">' + this.escapeHtml(agent.layer0.declaration) + '</div>' +
+          '<p>' + this.escapeHtml(agent.layer0.identity) + '</p>' +
+          '<p style="margin-top:8px;">' + this.escapeHtml(agent.layer0.mission) + '</p>' +
+        '</div>' +
+      '</div>' +
 
-      <div class="persona-section">
-        <div class="persona-section-title">存在の核</div>
-        <p><strong>${agent.core.symbol}</strong> — ${agent.core.essence}</p>
-        <p style="margin-top:6px;">願い: ${agent.core.wish}</p>
-        <p style="margin-top:4px;">痛み: ${agent.core.pain}</p>
-      </div>
+      '<div class="persona-section">' +
+        '<div class="persona-section-title">存在の核</div>' +
+        '<p><strong>' + this.escapeHtml(agent.core.symbol) + '</strong> — ' + this.escapeHtml(agent.core.essence) + '</p>' +
+        '<p style="margin-top:6px;">願い: ' + this.escapeHtml(agent.core.wish) + '</p>' +
+        '<p style="margin-top:4px;">痛み: ' + this.escapeHtml(agent.core.pain) + '</p>' +
+      '</div>' +
 
-      ${agent.guidance ? `
-      <div class="persona-section">
-        <div class="persona-section-title">トーン</div>
-        <p>${agent.guidance.tone}</p>
-      </div>
+      (agent.guidance ?
+        '<div class="persona-section">' +
+          '<div class="persona-section-title">トーン</div>' +
+          '<p>' + this.escapeHtml(agent.guidance.tone) + '</p>' +
+        '</div>' +
+        '<div class="persona-section">' +
+          '<div class="persona-section-title">許可</div>' +
+          '<div class="persona-permissions">' + permissionHtml + '</div>' +
+        '</div>' +
+        '<div class="persona-section">' +
+          '<div class="persona-section-title">接し方</div>' +
+          '<ul class="persona-approach">' + approachHtml + '</ul>' +
+        '</div>'
+      : '') +
 
-      <div class="persona-section">
-        <div class="persona-section-title">許可</div>
-        <div class="persona-permissions">${permissionHtml}</div>
-      </div>
+      '<div class="persona-section">' +
+        '<div class="persona-section-title">信念体系</div>' +
+        '<ul class="persona-beliefs">' + beliefsHtml + '</ul>' +
+      '</div>' +
 
-      <div class="persona-section">
-        <div class="persona-section-title">接し方</div>
-        <ul class="persona-approach">${approachHtml}</ul>
-      </div>
-      ` : ''}
-
-      <div class="persona-section">
-        <div class="persona-section-title">信念体系</div>
-        <ul class="persona-beliefs">${beliefsHtml}</ul>
-      </div>
-
-      ${strengthHtml ? `
-      <div class="persona-section">
-        <div class="persona-section-title">得意な領域</div>
-        ${strengthHtml}
-      </div>
-      ` : ''}
-    `;
+      (strengthHtml ?
+        '<div class="persona-section">' +
+          '<div class="persona-section-title">得意な領域</div>' +
+          strengthHtml +
+        '</div>'
+      : '');
 
     this.els.personaModal.classList.add('active');
     this._scrollLockY = window.scrollY;
@@ -354,22 +397,20 @@ const UI = {
     document.body.style.top = -this._scrollLockY + 'px';
   },
 
-  // --- Map modal ---
+  // --- Map modal (all escaped) ---
   showMapModal() {
-    const itemsHtml = AGENTS.map(a => `
-      <div class="map-item">
-        <div class="map-avatar" style="background:${a.gradient};">${a.initial}</div>
-        <div>
-          <div class="map-name" style="color:${a.color};">${a.name}（${a.title}）</div>
-          <div class="map-function">${a.mapFunction}</div>
-        </div>
-      </div>
-    `).join('');
+    const itemsHtml = AGENTS.map(a =>
+      '<div class="map-item">' +
+        '<div class="map-avatar" style="background:' + a.gradient + ';">' + this.escapeHtml(a.initial) + '</div>' +
+        '<div>' +
+          '<div class="map-name" style="color:' + a.color + ';">' + this.escapeHtml(a.name) + '（' + this.escapeHtml(a.title) + '）</div>' +
+          '<div class="map-function">' + this.escapeHtml(a.mapFunction) + '</div>' +
+        '</div>' +
+      '</div>'
+    ).join('');
 
-    this.els.relationshipMap.innerHTML = `
-      <div class="map-title">7人の関係性</div>
-      ${itemsHtml}
-    `;
+    this.els.relationshipMap.innerHTML =
+      '<div class="map-title">7人の関係性</div>' + itemsHtml;
 
     this.els.mapModal.classList.add('active');
     this._scrollLockY = window.scrollY;
@@ -399,7 +440,7 @@ const UI = {
 
       const deleteBtn = document.createElement('button');
       deleteBtn.className = 'session-delete-btn';
-      deleteBtn.innerHTML = '×';
+      deleteBtn.innerHTML = '&times;';
       deleteBtn.setAttribute('aria-label', '削除');
       deleteBtn.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -428,8 +469,9 @@ const UI = {
   },
 
   escapeHtml(text) {
+    if (text == null) return '';
     const d = document.createElement('div');
-    d.textContent = text;
+    d.textContent = String(text);
     return d.innerHTML.replace(/\n/g, '<br>');
   },
 
