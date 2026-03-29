@@ -213,33 +213,38 @@
     if (!agent) return;
 
     UI.showTypingIndicator(agent);
-    await delay(700 + Math.random() * 1000);
+    try {
+      await delay(700 + Math.random() * 1000);
 
-    const result = await Chat.generateResponse(agentId, userText, currentMode);
-    UI.removeTypingIndicator(agentId);
+      const result = await Chat.generateResponse(agentId, userText, currentMode);
 
-    if (result) {
-      const msgEl = UI.addAgentMessage(result.agent, result.text, result.mode);
+      if (result) {
+        const msgEl = UI.addAgentMessage(result.agent, result.text, result.mode);
 
-      if (result.mode && result.mode.reason) {
-        UI.showToast(
-          result.mode.reason + ' →【' + result.mode.name + '】モード',
-          2500
-        );
-      }
+        if (result.mode && result.mode.reason) {
+          UI.showToast(
+            result.mode.reason + ' →【' + result.mode.name + '】モード',
+            2500
+          );
+        }
 
-      Chat.addMessage('agent', agentId, result.text, result.mode);
+        Chat.addMessage('agent', agentId, result.text, result.mode);
 
-      await delay(400 + Math.random() * 500);
-      const reactions = Chat.generateReactions(agentId, userText);
-      if (reactions.length > 0) {
-        UI.addReactions(msgEl, reactions);
-        const s = Chat.getActiveSession();
-        if (s && s.messages.length > 0) {
-          s.messages[s.messages.length - 1].reactions = reactions;
-          Chat.save();
+        await delay(400 + Math.random() * 500);
+        const reactions = Chat.generateReactions(agentId, userText);
+        if (reactions.length > 0) {
+          UI.addReactions(msgEl, reactions);
+          const s = Chat.getActiveSession();
+          if (s && s.messages.length > 0) {
+            s.messages[s.messages.length - 1].reactions = reactions;
+            Chat.save();
+          }
         }
       }
+    } catch (err) {
+      UI.showToast('応答の生成に失敗しました', 3000);
+    } finally {
+      UI.removeTypingIndicator(agentId);
     }
   }
 

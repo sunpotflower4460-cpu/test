@@ -189,7 +189,7 @@ const UI = {
   addAgentMessage(agent, text, mode) {
     const div = document.createElement('div');
     div.className = `message message-agent ${agent.animClass}`;
-    const modeLabel = mode ? `<span class="agent-mode-label">— ${mode.name}</span>` : '';
+    const modeLabel = mode ? `<span class="agent-mode-label">— ${this.escapeHtml(mode.name)}</span>` : '';
 
     div.innerHTML = `
       <div class="agent-label">
