@@ -1,6 +1,7 @@
 // ==========================================
-// じぶん会議 – メインアプリ v4.0
-// Light/Dark + Native App Feel
+// じぶん会議 – メインアプリ v5.0
+// Claude Code fixes:
+//   - Race condition: isGenerating in try-finally
 // ==========================================
 
 (function () {
@@ -8,6 +9,7 @@
 
   let selectedAgentId = null;
   let isGenerating = false;
+  let onboardingSlide = 0;
 
   function init() {
     UI.init();
@@ -15,15 +17,79 @@
 
     setResponseMode('short');
 
+    // Onboarding → Splash → Main flow
+    if (!UI.hasSeenOnboarding()) {
+      showOnboarding();
+    } else {
+      showSplash();
+    }
+  }
+
+  // --- Onboarding ---
+  function showOnboarding() {
+    UI.els.onboardingScreen.classList.add('active');
+
+    UI.els.onboardingNextBtn.addEventListener('click', () => {
+      if (onboardingSlide < 2) {
+        goToSlide(onboardingSlide + 1);
+      } else {
+        finishOnboarding();
+      }
+    });
+
+    UI.els.onboardingSkipBtn.addEventListener('click', () => {
+      finishOnboarding();
+    });
+
+    // Dot clicks
+    UI.els.onboardingDots.querySelectorAll('.onboarding-dot').forEach(dot => {
+      dot.addEventListener('click', () => {
+        goToSlide(parseInt(dot.dataset.dot, 10));
+      });
+    });
+  }
+
+  function goToSlide(index) {
+    const slides = UI.els.onboardingSlides.querySelectorAll('.onboarding-slide');
+    const dots = UI.els.onboardingDots.querySelectorAll('.onboarding-dot');
+
+    slides[onboardingSlide].classList.remove('active');
+    slides[onboardingSlide].classList.add('exit-left');
+    setTimeout(() => slides[onboardingSlide].classList.remove('exit-left'), 400);
+
+    dots[onboardingSlide].classList.remove('active');
+
+    onboardingSlide = index;
+    slides[onboardingSlide].classList.add('active');
+    dots[onboardingSlide].classList.add('active');
+
+    // Update button text on last slide
+    UI.els.onboardingNextBtn.textContent = onboardingSlide === 2 ? 'はじめる' : '次へ';
+  }
+
+  function finishOnboarding() {
+    UI.markOnboardingDone();
+    UI.els.onboardingScreen.classList.remove('active');
+    showSplash();
+  }
+
+  // --- Splash ---
+  function showSplash() {
+    UI.els.splashScreen.classList.add('active');
     bindEvents();
     UI.setupAutoResize();
     renderAgentBar();
     renderSessionList();
 
+    // Always start with a fresh session
     const session = Chat.getActiveSession();
     if (session && session.messages.length > 0) {
+      // Existing session with messages — restore
       UI.setSessionTitle(session.title);
       restoreMessages(session);
+    } else {
+      // Empty or new — show welcome
+      UI.setSessionTitle('新しい会議');
     }
 
     UI.updateModeIndicator(RESPONSE_MODES[currentMode].name);
@@ -35,7 +101,14 @@
       UI.addRipple(UI.els.startBtn, e);
       setTimeout(() => {
         UI.showMain();
-        setTimeout(() => UI.els.userInput.focus(), 600);
+        setTimeout(() => {
+          // Show welcome if chat is empty
+          const session = Chat.getActiveSession();
+          if (!session || session.messages.length === 0) {
+            UI.showWelcome();
+          }
+          UI.els.userInput.focus();
+        }, 600);
       }, 150);
     });
 
@@ -59,10 +132,26 @@
       Chat.createNewSession();
       UI.clearMessages();
       UI.setSessionTitle('新しい会議');
+      UI.showWelcome();
       renderSessionList();
       UI.closeSidebar();
       selectedAgentId = null;
       renderAgentBar();
+    });
+
+    // Welcome suggestion buttons
+    document.querySelectorAll('.welcome-suggestion-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const text = btn.dataset.text;
+        if (text) {
+          UI.els.userInput.value = text;
+          UI.els.sendBtn.disabled = false;
+          UI.els.userInput.focus();
+          // Auto resize
+          UI.els.userInput.style.height = 'auto';
+          UI.els.userInput.style.height = Math.min(UI.els.userInput.scrollHeight, 120) + 'px';
+        }
+      });
     });
 
     // Send
@@ -141,7 +230,12 @@
         if (session) {
           UI.clearMessages();
           UI.setSessionTitle(session.title);
-          restoreMessages(session);
+          if (session.messages.length > 0) {
+            UI.hideWelcome();
+            restoreMessages(session);
+          } else {
+            UI.showWelcome();
+          }
         }
         UI.closeSidebar();
       },
@@ -150,7 +244,12 @@
         if (session) {
           UI.clearMessages();
           UI.setSessionTitle(session.title);
-          restoreMessages(session);
+          if (session.messages.length > 0) {
+            UI.hideWelcome();
+            restoreMessages(session);
+          } else {
+            UI.showWelcome();
+          }
         }
         renderSessionList();
       }
@@ -179,6 +278,7 @@
     const text = UI.getInputValue();
     if (!text) return;
 
+    UI.hideWelcome();
     UI.addUserMessage(text);
     Chat.addMessage('user', null, text, null);
     UI.clearInput();
@@ -191,18 +291,21 @@
 
     isGenerating = true;
 
-    let targetId;
-    if (selectedAgentId === 'random') {
-      const randomAgent = getRandomAgent();
-      targetId = randomAgent.id;
-    } else if (selectedAgentId) {
-      targetId = selectedAgentId;
-    } else {
-      targetId = 'ray';
-    }
+    try {
+      let targetId;
+      if (selectedAgentId === 'random') {
+        const randomAgent = getRandomAgent();
+        targetId = randomAgent.id;
+      } else if (selectedAgentId) {
+        targetId = selectedAgentId;
+      } else {
+        targetId = 'ray';
+      }
 
-    await handleAgentResponse(targetId, text);
-    isGenerating = false;
+      await handleAgentResponse(targetId, text);
+    } finally {
+      isGenerating = false;
+    }
   }
 
   async function handleAgentResponse(agentId, userText) {
