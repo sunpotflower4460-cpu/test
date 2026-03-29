@@ -568,3 +568,12 @@ body {
 @media (min-width:768px) {
   .modal-sheet { border-radius:var(--radius); align-self:center; }
 }
+/* ===== Modal scroll lock ===== */
+body.modal-open {
+  overflow: hidden;
+  position: fixed;
+  width: 100%;
+}
+body.modal-open #chat-area {
+  overflow: hidden;
+}
