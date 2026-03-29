@@ -1,6 +1,6 @@
 // ==========================================
-// じぶん会議 – メインアプリ v2.0
-// ランダム応答, localStorage, toast通知
+// じぶん会議 – メインアプリ v3.0
+// レガシー応答 + セッション削除対応
 // ==========================================
 
 (function () {
@@ -13,7 +13,6 @@
     UI.init();
     Chat.init();
 
-    // Apply default mode theme
     setResponseMode('short');
 
     bindEvents();
@@ -21,14 +20,12 @@
     renderAgentBar();
     renderSessionList();
 
-    // Restore active session messages
     const session = Chat.getActiveSession();
     if (session && session.messages.length > 0) {
       UI.setSessionTitle(session.title);
       restoreMessages(session);
     }
 
-    // Update mode indicator
     UI.updateModeIndicator(RESPONSE_MODES[currentMode].name);
   }
 
@@ -82,7 +79,7 @@
       });
     });
 
-    // Map button in header
+    // Map button
     UI.els.mapBtn.addEventListener('click', () => {
       UI.showMapModal();
     });
@@ -103,7 +100,6 @@
         selectedAgentId = selectedAgentId === id ? null : id;
         renderAgentBar();
 
-        // Show agent name in header when selected
         if (selectedAgentId && selectedAgentId !== 'random') {
           const a = getAgent(selectedAgentId);
           if (a) UI.showToast(a.name + '（' + a.title + '）を選択', 1500);
@@ -130,6 +126,15 @@
           restoreMessages(session);
         }
         UI.closeSidebar();
+      },
+      (sessionId) => {
+        const session = Chat.deleteSession(sessionId);
+        if (session) {
+          UI.clearMessages();
+          UI.setSessionTitle(session.title);
+          restoreMessages(session);
+        }
+        renderSessionList();
       }
     );
   }
@@ -160,7 +165,6 @@
     Chat.addMessage('user', null, text, null);
     UI.clearInput();
 
-    // Update title
     const session = Chat.getActiveSession();
     if (session) {
       UI.setSessionTitle(session.title);
@@ -169,7 +173,6 @@
 
     isGenerating = true;
 
-    // Determine which agent responds
     let targetId;
     if (selectedAgentId === 'random') {
       const randomAgent = getRandomAgent();
@@ -177,7 +180,6 @@
     } else if (selectedAgentId) {
       targetId = selectedAgentId;
     } else {
-      // Default: Ray
       targetId = 'ray';
     }
 
@@ -190,7 +192,6 @@
     const agent = getAgent(agentId);
     if (!agent) return;
 
-    // Show typing
     UI.showTypingIndicator(agent);
 
     await delay(700 + Math.random() * 1000);
@@ -201,7 +202,6 @@
     if (result) {
       const msgEl = UI.addAgentMessage(result.agent, result.text, result.mode);
 
-      // Show mode estimation toast if reason exists
       if (result.mode && result.mode.reason) {
         UI.showToast(
           result.mode.reason + ' →【' + result.mode.name + '】モード',
@@ -211,12 +211,10 @@
 
       Chat.addMessage('agent', agentId, result.text, result.mode);
 
-      // Generate reactions from others
       await delay(400 + Math.random() * 500);
       const reactions = Chat.generateReactions(agentId, userText);
       if (reactions.length > 0) {
         UI.addReactions(msgEl, reactions);
-        // Save reactions to last message
         const s = Chat.getActiveSession();
         if (s && s.messages.length > 0) {
           s.messages[s.messages.length - 1].reactions = reactions;
