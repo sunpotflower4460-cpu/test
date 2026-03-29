@@ -39,7 +39,7 @@ const Chat = {
   // --- Sessions ---
   createNewSession() {
     const session = {
-      id: 'session-' + Date.now(),
+      id: 'session-' + Date.now() + '-' + Math.random().toString(36).substring(2, 7),
       title: '新しい会議',
       messages: [],
       createdAt: new Date().toISOString(),
@@ -83,7 +83,7 @@ const Chat = {
     if (!session) return;
 
     const msg = {
-      id: 'msg-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5),
+      id: 'msg-' + Date.now() + '-' + Math.random().toString(36).substring(2, 7),
       role,
       agentId,
       text,
@@ -178,7 +178,11 @@ const Chat = {
     const reactions = [];
     const others = AGENTS.filter(a => a.id !== speakerId);
     const count = 2 + Math.floor(Math.random() * 2);
-    const picked = others.sort(() => Math.random() - 0.5).slice(0, count);
+    for (let i = others.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [others[i], others[j]] = [others[j], others[i]];
+    }
+    const picked = others.slice(0, count);
 
     const texts = {
       ray: ['……', '静かに頷く', '映している'],

@@ -664,10 +664,6 @@ function getRandomResponse(agent, modeKey) {
   return responses[Math.floor(Math.random() * responses.length)];
 }
 
-function getDefaultMode(agent) {
-  return agent._legacy_modes[0];
-}
-
 function getRandomAgent() {
   return AGENTS[Math.floor(Math.random() * AGENTS.length)];
 }

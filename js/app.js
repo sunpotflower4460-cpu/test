@@ -201,8 +201,11 @@
       targetId = 'ray';
     }
 
-    await handleAgentResponse(targetId, text);
-    isGenerating = false;
+    try {
+      await handleAgentResponse(targetId, text);
+    } finally {
+      isGenerating = false;
+    }
   }
 
   async function handleAgentResponse(agentId, userText) {

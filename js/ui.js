@@ -39,6 +39,9 @@ const UI = {
     };
 
     this.initTheme();
+    this._agentOnSelect = null;
+    this._agentOnLongPress = null;
+    this.initAgentBarEvents();
   },
 
   // --- Theme ---
@@ -119,44 +122,58 @@ const UI = {
   },
 
   // --- Agent bar ---
+  initAgentBarEvents() {
+    const container = this.els.agentIcons;
+    let pressTimer = null;
+
+    container.addEventListener('click', (e) => {
+      const icon = e.target.closest('.agent-icon');
+      if (!icon || !this._agentOnSelect) return;
+      this.addRipple(icon, e);
+      this._agentOnSelect(icon.dataset.agentId);
+    });
+
+    container.addEventListener('touchstart', (e) => {
+      const icon = e.target.closest('.agent-icon');
+      if (!icon || !this._agentOnLongPress) return;
+      pressTimer = setTimeout(() => {
+        e.preventDefault();
+        this._agentOnLongPress(icon.dataset.agentId);
+      }, 500);
+    }, { passive: false });
+
+    container.addEventListener('touchend', () => clearTimeout(pressTimer));
+    container.addEventListener('touchmove', () => clearTimeout(pressTimer));
+
+    container.addEventListener('dblclick', (e) => {
+      const icon = e.target.closest('.agent-icon');
+      if (!icon || !this._agentOnLongPress) return;
+      this._agentOnLongPress(icon.dataset.agentId);
+    });
+  },
+
   renderAgentIcons(selectedId, onSelect, onLongPress) {
+    this._agentOnSelect = onSelect;
+    this._agentOnLongPress = onLongPress;
+
     this.els.agentIcons.innerHTML = '';
 
     AGENTS.forEach(agent => {
       const el = document.createElement('div');
       el.className = 'agent-icon' + (selectedId === agent.id ? ' selected' : '');
       el.style.background = agent.gradient;
+      el.dataset.agentId = agent.id;
       el.innerHTML = `
-        ${agent.initial}
-        <span class="agent-icon-label">${agent.name}</span>
+        ${this.escapeHtml(agent.initial)}
+        <span class="agent-icon-label">${this.escapeHtml(agent.name)}</span>
       `;
-
-      el.addEventListener('click', (e) => {
-        this.addRipple(el, e);
-        onSelect(agent.id);
-      });
-
-      let pressTimer;
-      el.addEventListener('touchstart', (e) => {
-        pressTimer = setTimeout(() => {
-          e.preventDefault();
-          onLongPress(agent.id);
-        }, 500);
-      }, { passive: false });
-      el.addEventListener('touchend', () => clearTimeout(pressTimer));
-      el.addEventListener('touchmove', () => clearTimeout(pressTimer));
-      el.addEventListener('dblclick', () => onLongPress(agent.id));
-
       this.els.agentIcons.appendChild(el);
     });
 
     const randEl = document.createElement('div');
     randEl.className = 'agent-icon agent-icon--random' + (selectedId === 'random' ? ' selected' : '');
+    randEl.dataset.agentId = 'random';
     randEl.innerHTML = `?<span class="agent-icon-label">ランダム</span>`;
-    randEl.addEventListener('click', (e) => {
-      this.addRipple(randEl, e);
-      onSelect('random');
-    });
     this.els.agentIcons.appendChild(randEl);
   },
 
@@ -177,9 +194,9 @@ const UI = {
     div.innerHTML = `
       <div class="agent-label">
         <div class="agent-avatar-sm" style="background:${agent.gradient};">
-          ${agent.initial}
+          ${this.escapeHtml(agent.initial)}
         </div>
-        <span class="agent-name-label" style="color:${agent.color};">${agent.name}</span>
+        <span class="agent-name-label" style="color:${agent.color};">${this.escapeHtml(agent.name)}</span>
         ${modeLabel}
       </div>
       <div class="bubble ${agent.bubbleClass}">${this.escapeHtml(text)}</div>
@@ -204,7 +221,7 @@ const UI = {
       tag.style.borderColor = agent.color;
       tag.innerHTML = `
         <span class="reaction-dot" style="background:${agent.color};"></span>
-        ${agent.name} ${r.text}
+        ${this.escapeHtml(agent.name)} ${this.escapeHtml(r.text)}
       `;
       container.appendChild(tag);
     });
@@ -222,9 +239,9 @@ const UI = {
     div.innerHTML = `
       <div class="agent-label">
         <div class="agent-avatar-sm" style="background:${agent.gradient};">
-          ${agent.initial}
+          ${this.escapeHtml(agent.initial)}
         </div>
-        <span class="agent-name-label" style="color:${agent.color};">${agent.name}</span>
+        <span class="agent-name-label" style="color:${agent.color};">${this.escapeHtml(agent.name)}</span>
       </div>
       <div class="bubble ${agent.bubbleClass}">
         <div class="typing-dots"><span></span><span></span><span></span></div>
@@ -239,17 +256,6 @@ const UI = {
   removeTypingIndicator(agentId) {
     const el = this.els.messages.querySelector(`[data-typing="${agentId}"]`);
     if (el) el.remove();
-  },
-
-  // --- Focus ---
-  setFocusedMessage(messageEl) {
-    this.els.messages.classList.add('focusing');
-    document.querySelectorAll('#messages .message').forEach(m => m.classList.remove('focused'));
-    if (messageEl) messageEl.classList.add('focused');
-  },
-  clearFocus() {
-    this.els.messages.classList.remove('focusing');
-    document.querySelectorAll('#messages .message').forEach(m => m.classList.remove('focused'));
   },
 
   // --- Toast ---
@@ -269,59 +275,61 @@ const UI = {
 
   // --- Persona modal ---
   showPersonaModal(agent) {
+    const esc = (s) => this.escapeHtml(String(s ?? ''));
+
     const beliefsHtml = agent.beliefs.map(b =>
-      `<li>「${typeof b === 'object' ? b.seed : b}」</li>`
+      `<li>「${esc(typeof b === 'object' ? b.seed : b)}」</li>`
     ).join('');
 
     const approachHtml = agent.guidance
       ? agent.guidance.approach.map(a =>
-          `<li class="persona-approach-item">${a}</li>`
+          `<li class="persona-approach-item">${esc(a)}</li>`
         ).join('')
       : '';
 
     const permissionHtml = agent.guidance && agent.guidance.permission
       ? agent.guidance.permission.map(p =>
-          `<span class="persona-permission-tag">${p}</span>`
+          `<span class="persona-permission-tag">${esc(p)}</span>`
         ).join('')
       : '';
 
     const strengthHtml = agent.strength
       ? `<div class="persona-strength">
-           <span class="strength-label">得意な深さ:</span> ${agent.strength.primaryLayers.join(', ')}<br>
-           <span class="strength-label">得意な領域:</span> ${agent.strength.primaryDomains.join(', ')}<br>
-           <span class="strength-label">神経親和:</span> ${agent.strength.nervousAffinity}
+           <span class="strength-label">得意な深さ:</span> ${esc(agent.strength.primaryLayers.join(', '))}<br>
+           <span class="strength-label">得意な領域:</span> ${esc(agent.strength.primaryDomains.join(', '))}<br>
+           <span class="strength-label">神経親和:</span> ${esc(agent.strength.nervousAffinity)}
          </div>`
       : '';
 
     this.els.personaDetail.innerHTML = `
       <div class="persona-header">
         <div class="persona-avatar-lg" style="background:${agent.gradient};">
-          ${agent.initial}
+          ${esc(agent.initial)}
         </div>
-        <div class="persona-name" style="color:${agent.color};">${agent.name}</div>
-        <div class="persona-role">${agent.role} — ${agent.title}</div>
+        <div class="persona-name" style="color:${agent.color};">${esc(agent.name)}</div>
+        <div class="persona-role">${esc(agent.role)} — ${esc(agent.title)}</div>
       </div>
 
       <div class="persona-section">
         <div class="persona-section-title">存在の宣言</div>
         <div class="persona-layer0">
-          <div class="persona-layer0-declaration">${agent.layer0.declaration}</div>
-          <p>${agent.layer0.identity}</p>
-          <p style="margin-top:8px;">${agent.layer0.mission}</p>
+          <div class="persona-layer0-declaration">${esc(agent.layer0.declaration)}</div>
+          <p>${esc(agent.layer0.identity)}</p>
+          <p style="margin-top:8px;">${esc(agent.layer0.mission)}</p>
         </div>
       </div>
 
       <div class="persona-section">
         <div class="persona-section-title">存在の核</div>
-        <p><strong>${agent.core.symbol}</strong> — ${agent.core.essence}</p>
-        <p style="margin-top:6px;">願い: ${agent.core.wish}</p>
-        <p style="margin-top:4px;">痛み: ${agent.core.pain}</p>
+        <p><strong>${esc(agent.core.symbol)}</strong> — ${esc(agent.core.essence)}</p>
+        <p style="margin-top:6px;">願い: ${esc(agent.core.wish)}</p>
+        <p style="margin-top:4px;">痛み: ${esc(agent.core.pain)}</p>
       </div>
 
       ${agent.guidance ? `
       <div class="persona-section">
         <div class="persona-section-title">トーン</div>
-        <p>${agent.guidance.tone}</p>
+        <p>${esc(agent.guidance.tone)}</p>
       </div>
 
       <div class="persona-section">
@@ -356,12 +364,13 @@ const UI = {
 
   // --- Map modal ---
   showMapModal() {
+    const esc = (s) => this.escapeHtml(String(s ?? ''));
     const itemsHtml = AGENTS.map(a => `
       <div class="map-item">
-        <div class="map-avatar" style="background:${a.gradient};">${a.initial}</div>
+        <div class="map-avatar" style="background:${a.gradient};">${esc(a.initial)}</div>
         <div>
-          <div class="map-name" style="color:${a.color};">${a.name}（${a.title}）</div>
-          <div class="map-function">${a.mapFunction}</div>
+          <div class="map-name" style="color:${a.color};">${esc(a.name)}（${esc(a.title)}）</div>
+          <div class="map-function">${esc(a.mapFunction)}</div>
         </div>
       </div>
     `).join('');
