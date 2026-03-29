@@ -1,6 +1,6 @@
 // ==========================================
-// じぶん会議 – UI v3.0
-// 新ペルソナモーダル + スクロールロック + セッション削除
+// じぶん会議 – UI v4.0
+// Light/Dark + Native App Feel
 // ==========================================
 
 const UI = {
@@ -18,6 +18,7 @@ const UI = {
       modeIndicator: document.getElementById('mode-indicator'),
       menuBtn: document.getElementById('menu-btn'),
       mapBtn: document.getElementById('map-btn'),
+      themeToggleBtn: document.getElementById('theme-toggle-btn'),
       sidebar: document.getElementById('sidebar'),
       sidebarClose: document.getElementById('sidebar-close'),
       sidebarOverlay: document.getElementById('sidebar-overlay'),
@@ -36,11 +37,75 @@ const UI = {
       relationshipMap: document.getElementById('relationship-map'),
       modeToast: document.getElementById('mode-toast'),
     };
+
+    this.initTheme();
   },
 
+  // --- Theme ---
+  initTheme() {
+    const saved = localStorage.getItem('jibun-theme');
+    if (saved) {
+      document.documentElement.setAttribute('data-theme', saved);
+    }
+    // If no saved preference, CSS @media handles it automatically
+  },
+
+  toggleTheme() {
+    const root = document.documentElement;
+    const current = root.getAttribute('data-theme');
+    const isDarkOS = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+    let next;
+    if (current === 'dark') {
+      next = 'light';
+    } else if (current === 'light') {
+      next = 'dark';
+    } else {
+      // No explicit setting, using OS default. Toggle to opposite.
+      next = isDarkOS ? 'light' : 'dark';
+    }
+
+    root.setAttribute('data-theme', next);
+    localStorage.setItem('jibun-theme', next);
+
+    // Update theme-color meta
+    const meta = document.querySelector('meta[name="theme-color"]:not([media])') ||
+                 document.querySelector('meta[name="theme-color"]');
+    if (meta) {
+      meta.setAttribute('content', next === 'light' ? '#f5f4f1' : '#0b0b10');
+    }
+  },
+
+  // --- Splash → Main ---
   showMain() {
-    this.els.splashScreen.classList.remove('active');
-    this.els.mainScreen.classList.add('active');
+    this.els.splashScreen.classList.add('exit');
+    setTimeout(() => {
+      this.els.splashScreen.classList.remove('active');
+      this.els.splashScreen.classList.remove('exit');
+      this.els.mainScreen.classList.add('active', 'entering');
+      setTimeout(() => {
+        this.els.mainScreen.classList.remove('entering');
+      }, 500);
+    }, 500);
+  },
+
+  // --- Ripple effect ---
+  addRipple(el, e) {
+    const rect = el.getBoundingClientRect();
+    const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+    const y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
+    const size = Math.max(rect.width, rect.height) * 2;
+
+    const ripple = document.createElement('span');
+    ripple.className = 'ripple';
+    ripple.style.width = ripple.style.height = size + 'px';
+    ripple.style.left = (x - size / 2) + 'px';
+    ripple.style.top = (y - size / 2) + 'px';
+
+    el.classList.add('ripple-host');
+    el.appendChild(ripple);
+
+    setTimeout(() => ripple.remove(), 600);
   },
 
   // --- Sidebar ---
@@ -66,9 +131,11 @@ const UI = {
         <span class="agent-icon-label">${agent.name}</span>
       `;
 
-      el.addEventListener('click', () => onSelect(agent.id));
+      el.addEventListener('click', (e) => {
+        this.addRipple(el, e);
+        onSelect(agent.id);
+      });
 
-      // Long press for modal
       let pressTimer;
       el.addEventListener('touchstart', (e) => {
         pressTimer = setTimeout(() => {
@@ -78,18 +145,18 @@ const UI = {
       }, { passive: false });
       el.addEventListener('touchend', () => clearTimeout(pressTimer));
       el.addEventListener('touchmove', () => clearTimeout(pressTimer));
-
-      // Desktop: double click for modal
       el.addEventListener('dblclick', () => onLongPress(agent.id));
 
       this.els.agentIcons.appendChild(el);
     });
 
-    // Random button
     const randEl = document.createElement('div');
     randEl.className = 'agent-icon agent-icon--random' + (selectedId === 'random' ? ' selected' : '');
     randEl.innerHTML = `?<span class="agent-icon-label">ランダム</span>`;
-    randEl.addEventListener('click', () => onSelect('random'));
+    randEl.addEventListener('click', (e) => {
+      this.addRipple(randEl, e);
+      onSelect('random');
+    });
     this.els.agentIcons.appendChild(randEl);
   },
 
@@ -105,7 +172,6 @@ const UI = {
   addAgentMessage(agent, text, mode) {
     const div = document.createElement('div');
     div.className = `message message-agent ${agent.animClass}`;
-
     const modeLabel = mode ? `<span class="agent-mode-label">— ${mode.name}</span>` : '';
 
     div.innerHTML = `
@@ -175,7 +241,7 @@ const UI = {
     if (el) el.remove();
   },
 
-  // --- Focus effect ---
+  // --- Focus ---
   setFocusedMessage(messageEl) {
     this.els.messages.classList.add('focusing');
     document.querySelectorAll('#messages .message').forEach(m => m.classList.remove('focused'));
