@@ -1,6 +1,9 @@
 // ==========================================
-// じぶん会議 – 会話ロジック v3.0
-// localStorage 永続化 + セッション削除
+// じぶん会議 – 会話ロジック v5.0
+// Claude Code fixes:
+//   - .substr() → .substring()
+//   - Fisher-Yates shuffle
+//   - Session ID: Date.now() + random string
 // ==========================================
 
 const STORAGE_KEY = 'jibun-kaigi-sessions';
@@ -38,8 +41,9 @@ const Chat = {
 
   // --- Sessions ---
   createNewSession() {
+    const randomStr = Math.random().toString(36).substring(2, 8);
     const session = {
-      id: 'session-' + Date.now(),
+      id: 'session-' + Date.now() + '-' + randomStr,
       title: '新しい会議',
       messages: [],
       createdAt: new Date().toISOString(),
@@ -82,8 +86,9 @@ const Chat = {
     const session = this.getActiveSession();
     if (!session) return;
 
+    const randomStr = Math.random().toString(36).substring(2, 7);
     const msg = {
-      id: 'msg-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5),
+      id: 'msg-' + Date.now() + '-' + randomStr,
       role,
       agentId,
       text,
@@ -173,12 +178,22 @@ const Chat = {
     return { ...modes[0], reason: null };
   },
 
+  // --- Fisher-Yates shuffle ---
+  _shuffle(arr) {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  },
+
   // --- Reactions ---
   generateReactions(speakerId, userText) {
     const reactions = [];
     const others = AGENTS.filter(a => a.id !== speakerId);
     const count = 2 + Math.floor(Math.random() * 2);
-    const picked = others.sort(() => Math.random() - 0.5).slice(0, count);
+    const picked = this._shuffle(others).slice(0, count);
 
     const texts = {
       ray: ['……', '静かに頷く', '映している'],
