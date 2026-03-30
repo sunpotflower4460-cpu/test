@@ -51,6 +51,12 @@
           <span id="session-title">新しい会議</span>
           <span id="mode-indicator" class="mode-indicator"></span>
         </div>
+        <button id="settings-btn" class="icon-btn" aria-label="設定・APIキー">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <circle cx="10" cy="10" r="3" stroke="currentColor" stroke-width="1.5" fill="none"/>
+            <path d="M10 2v2M10 16v2M2 10h2M16 10h2M4.22 4.22l1.41 1.41M14.37 14.37l1.41 1.41M4.22 15.78l1.41-1.41M14.37 5.63l1.41-1.41" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </button>
         <button id="theme-toggle-btn" class="icon-btn" aria-label="テーマ切替">
           <svg class="theme-icon-dark" width="20" height="20" viewBox="0 0 20 20" fill="none">
             <circle cx="10" cy="10" r="4" fill="currentColor"/>
@@ -121,7 +127,7 @@
             <div id="empty-state" class="empty-state" aria-hidden="true">
               <div class="empty-orb"></div>
               <p class="empty-title">誰と話す？</p>
-              <p class="empty-subtitle">下のアイコンからペルソナを選んで<br>会話をはじめよう</p>
+              <p class="empty-subtitle">下のタブから会話モードを選んで<br>はじめよう</p>
             </div>
           </div>
           <!-- 最新へボタン -->
@@ -132,7 +138,49 @@
           </button>
         </main>
 
-        <!-- エージェント選択バー -->
+        <!-- 会話モードタブバー -->
+        <div id="conv-mode-bar">
+          <button class="conv-tab active" data-conv="individual" aria-label="個別会話">
+            <svg viewBox="0 0 14 14" fill="none"><circle cx="7" cy="5" r="2.5" stroke="currentColor" stroke-width="1.3"/><path d="M2 12c0-2.2 2.2-4 5-4s5 1.8 5 4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+            個別会話
+          </button>
+          <button class="conv-tab" data-conv="random" aria-label="ランダム会話">
+            <svg viewBox="0 0 14 14" fill="none"><path d="M2 5h2.5L7 2l2.5 3H12M2 9h2.5L7 12l2.5-3H12" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            ランダム
+          </button>
+          <button class="conv-tab" data-conv="meeting" aria-label="全体会議">
+            <svg viewBox="0 0 14 14" fill="none"><circle cx="4" cy="5" r="1.8" stroke="currentColor" stroke-width="1.2"/><circle cx="10" cy="5" r="1.8" stroke="currentColor" stroke-width="1.2"/><circle cx="7" cy="5" r="1.8" stroke="currentColor" stroke-width="1.2"/><path d="M1 12c0-1.6 1.3-3 3-3M13 12c0-1.6-1.3-3-3-3M4 12c0-1.6 1.3-3 3-3s3 1.4 3 3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+            全体会議
+          </button>
+          <button class="minutes-tab-btn" id="minutes-btn" aria-label="議事録マスター">
+            <svg viewBox="0 0 13 13" fill="none"><rect x="2" y="1" width="9" height="11" rx="1.5" stroke="currentColor" stroke-width="1.2"/><line x1="4" y1="4.5" x2="9" y2="4.5" stroke="currentColor" stroke-width="1" stroke-linecap="round"/><line x1="4" y1="6.5" x2="9" y2="6.5" stroke="currentColor" stroke-width="1" stroke-linecap="round"/><line x1="4" y1="8.5" x2="7" y2="8.5" stroke="currentColor" stroke-width="1" stroke-linecap="round"/></svg>
+            議事録
+          </button>
+        </div>
+
+        <!-- ランダムパネル (random mode) -->
+        <div id="random-panel">
+          <p class="random-hint">AIが今のあなたに最適なエージェントを自動で選びます</p>
+          <div id="random-selected-badge" class="random-selected-badge">
+            <span class="random-dot"></span>
+            <span id="random-agent-name"></span>
+          </div>
+        </div>
+
+        <!-- 全体会議パネル (meeting mode) -->
+        <div id="meeting-panel">
+          <div class="meeting-header">
+            <span class="meeting-label">参加者を選ぶ (2〜7人)</span>
+            <span class="meeting-count-badge" id="meeting-count">0 / 7</span>
+          </div>
+          <div class="meeting-picker" id="meeting-agent-picker"></div>
+          <p class="meeting-note">
+            ⚠️ 全体会議はエージェントが順番に発言するため、より多くのリソースを使います。<br>
+            <strong>短文モード</strong>推奨。本格利用には <a href="#" id="open-settings-from-meeting">APIキーを登録</a> してください。
+          </p>
+        </div>
+
+        <!-- エージェント選択バー (individual mode) -->
         <div id="agent-bar">
           <div id="agent-icons"></div>
         </div>
@@ -167,6 +215,24 @@
       <div class="modal-sheet">
         <div class="modal-handle" role="button" aria-label="閉じる" tabindex="0"></div>
         <div id="relationship-map"></div>
+      </div>
+    </div>
+
+    <!-- 議事録モーダル -->
+    <div id="minutes-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="minutes-modal-title">
+      <div class="modal-backdrop"></div>
+      <div class="modal-sheet">
+        <div class="modal-handle" role="button" aria-label="閉じる" tabindex="0"></div>
+        <div id="minutes-content"></div>
+      </div>
+    </div>
+
+    <!-- 設定モーダル (APIキー) -->
+    <div id="settings-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="settings-modal-title">
+      <div class="modal-backdrop"></div>
+      <div class="modal-sheet">
+        <div class="modal-handle" role="button" aria-label="閉じる" tabindex="0"></div>
+        <div id="settings-content"></div>
       </div>
     </div>
 

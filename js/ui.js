@@ -320,12 +320,11 @@ const UI = {
     const div = document.createElement('div');
     div.className = `message message-agent ${agent.animClass}`;
     const modeLabel = mode ? `<span class="agent-mode-label">— ${this.escapeHtml(mode.name)}</span>` : '';
+    const avatarContent = agent.avatar || this.escapeHtml(agent.initial);
 
     div.innerHTML = `
       <div class="agent-label">
-        <div class="agent-avatar-sm" style="background:${agent.gradient};">
-          ${this.escapeHtml(agent.initial)}
-        </div>
+        <div class="agent-avatar-sm" style="background:${agent.gradient};">${avatarContent}</div>
         <span class="agent-name-label" style="color:${agent.color};">${this.escapeHtml(agent.name)}</span>
         ${modeLabel}
       </div>
@@ -365,12 +364,11 @@ const UI = {
     const div = document.createElement('div');
     div.className = `message message-agent typing-message ${agent.animClass}`;
     div.setAttribute('data-typing', agent.id);
+    const avatarContent = agent.avatar || this.escapeHtml(agent.initial);
 
     div.innerHTML = `
       <div class="agent-label">
-        <div class="agent-avatar-sm" style="background:${agent.gradient};">
-          ${this.escapeHtml(agent.initial)}
-        </div>
+        <div class="agent-avatar-sm" style="background:${agent.gradient};">${avatarContent}</div>
         <span class="agent-name-label" style="color:${agent.color};">${this.escapeHtml(agent.name)}</span>
       </div>
       <div class="bubble ${agent.bubbleClass}">
@@ -431,11 +429,10 @@ const UI = {
          </div>`
       : '';
 
+    const avatarLg = agent.avatar || esc(agent.initial);
     this.els.personaDetail.innerHTML = `
       <div class="persona-header">
-        <div class="persona-avatar-lg" style="background:${agent.gradient};">
-          ${esc(agent.initial)}
-        </div>
+        <div class="persona-avatar-lg" style="background:${agent.gradient};">${avatarLg}</div>
         <div id="persona-modal-name" class="persona-name" style="color:${agent.color};">${esc(agent.name)}</div>
         <div class="persona-role">${esc(agent.role)} — ${esc(agent.title)}</div>
       </div>
@@ -498,7 +495,7 @@ const UI = {
     const esc = (s) => this.escapeHtml(String(s ?? ''));
     const itemsHtml = AGENTS.map(a => `
       <div class="map-item">
-        <div class="map-avatar" style="background:${a.gradient};">${esc(a.initial)}</div>
+        <div class="map-avatar" style="background:${a.gradient};">${a.avatar || esc(a.initial)}</div>
         <div>
           <div class="map-name" style="color:${a.color};">${esc(a.name)}（${esc(a.title)}）</div>
           <div class="map-function">${esc(a.mapFunction)}</div>
@@ -519,8 +516,7 @@ const UI = {
   },
 
   closeModals() {
-    this.els.personaModal.classList.remove('active');
-    this.els.mapModal.classList.remove('active');
+    document.querySelectorAll('.modal.active').forEach(m => m.classList.remove('active'));
     document.body.classList.remove('modal-open');
     document.body.style.top = '';
     window.scrollTo(0, this._scrollLockY || 0);
@@ -613,5 +609,281 @@ const UI = {
       el.style.height = Math.min(el.scrollHeight, 120) + 'px';
       this.els.sendBtn.disabled = el.value.trim() === '';
     });
+  },
+
+  // ==========================================
+  // v6.0 — New UI Methods
+  // ==========================================
+
+  // --- Enhanced agent icons with SVG avatar ---
+  renderAgentIconsV6(selectedId, onSelect, onLongPress) {
+    this._agentOnSelect = onSelect;
+    this._agentOnLongPress = onLongPress;
+    this.els.agentIcons.innerHTML = '';
+
+    AGENTS.forEach(agent => {
+      const el = document.createElement('div');
+      el.className = 'agent-icon' + (selectedId === agent.id ? ' selected' : '');
+      el.style.background = agent.gradient;
+      el.dataset.agentId = agent.id;
+      el.setAttribute('role', 'button');
+      el.setAttribute('tabindex', '0');
+      el.setAttribute('aria-label', agent.name + '（' + agent.title + '）');
+      const avatarContent = agent.avatar || `<span>${this.escapeHtml(agent.initial)}</span>`;
+      el.innerHTML = avatarContent + `<span class="agent-icon-label">${this.escapeHtml(agent.name)}</span>`;
+      this.els.agentIcons.appendChild(el);
+    });
+
+    const randEl = document.createElement('div');
+    randEl.className = 'agent-icon agent-icon--random' + (selectedId === 'random' ? ' selected' : '');
+    randEl.dataset.agentId = 'random';
+    randEl.setAttribute('role', 'button');
+    randEl.setAttribute('tabindex', '0');
+    randEl.setAttribute('aria-label', 'ランダム');
+    randEl.innerHTML = `<svg viewBox="0 0 28 28" fill="none" style="width:22px;height:22px"><path d="M4 10h3.5L10 7l2.5 3H16M4 18h3.5L10 21l2.5-3H16M18 7l6 0M18 21l6 0M21 4l3 3-3 3M21 18l3 3-3 3" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="agent-icon-label">ランダム</span>`;
+    this.els.agentIcons.appendChild(randEl);
+  },
+
+  // --- Flash director-pick animation on agent icon ---
+  flashDirectorPick(agentId) {
+    const icon = this.els.agentIcons.querySelector(`[data-agent-id="${agentId}"]`);
+    if (!icon) return;
+    icon.classList.remove('director-picked');
+    void icon.offsetWidth; // reflow
+    icon.classList.add('director-picked');
+    setTimeout(() => icon.classList.remove('director-picked'), 600);
+  },
+
+  // --- Show director selection badge (random panel) ---
+  showDirectorBadge(agent) {
+    const badge = document.getElementById('random-selected-badge');
+    const nameEl = document.getElementById('random-agent-name');
+    if (!badge || !nameEl) return;
+    badge.style.background = agent.gradient;
+    nameEl.textContent = agent.name + '（' + agent.title + '）';
+    badge.classList.remove('show');
+    void badge.offsetWidth;
+    badge.classList.add('show');
+    setTimeout(() => badge.classList.remove('show'), 3000);
+  },
+
+  // --- Render meeting participant picker ---
+  renderMeetingPicker(selectedIds, onChange) {
+    const picker = document.getElementById('meeting-agent-picker');
+    const countEl = document.getElementById('meeting-count');
+    if (!picker) return;
+    picker.innerHTML = '';
+
+    AGENTS.forEach(agent => {
+      const chip = document.createElement('div');
+      const isSelected = selectedIds.includes(agent.id);
+      chip.className = 'meeting-chip' + (isSelected ? ' selected' : '');
+      chip.style.setProperty('--chip-color', agent.color);
+      chip.dataset.agentId = agent.id;
+
+      chip.innerHTML = `<span class="meeting-chip-dot"></span>${this.escapeHtml(agent.name)}`;
+      chip.addEventListener('click', () => {
+        const cur = [...selectedIds];
+        const idx = cur.indexOf(agent.id);
+        if (idx >= 0) {
+          cur.splice(idx, 1);
+        } else if (cur.length < 7) {
+          cur.push(agent.id);
+        }
+        onChange(cur);
+      });
+      picker.appendChild(chip);
+    });
+
+    if (countEl) countEl.textContent = selectedIds.length + ' / 7';
+  },
+
+  // --- Add opinion popup row below a message element ---
+  addOpinionPopups(opinions, afterEl) {
+    if (!opinions || !opinions.length) return;
+
+    // Toggle button
+    const toggleBtn = document.createElement('button');
+    toggleBtn.className = 'opinion-toggle-btn';
+    toggleBtn.innerHTML = `<svg viewBox="0 0 10 10" fill="none"><path d="M1 3.5L5 7L9 3.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg> ${opinions.length}人の意見`;
+    afterEl.after(toggleBtn);
+
+    // Opinion row
+    const row = document.createElement('div');
+    row.className = 'opinion-row collapsed';
+
+    opinions.forEach(op => {
+      const card = document.createElement('div');
+      card.className = 'opinion-card';
+      card.style.setProperty('--op-color', op.agent.color);
+      card.innerHTML = `<span class="opinion-agent-name">${this.escapeHtml(op.agent.name)}</span><p class="opinion-text">${this.escapeHtml(op.text)}</p>`;
+      row.appendChild(card);
+    });
+
+    toggleBtn.after(row);
+
+    let open = false;
+    toggleBtn.addEventListener('click', () => {
+      open = !open;
+      row.classList.toggle('collapsed', !open);
+      toggleBtn.innerHTML = `<svg viewBox="0 0 10 10" fill="none"><path d="${open ? 'M1 6.5L5 3L9 6.5' : 'M1 3.5L5 7L9 3.5'}" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg> ${open ? '閉じる' : opinions.length + '人の意見'}`;
+      if (open) this.scrollToBottom();
+    });
+  },
+
+  // --- Meeting sequence label ---
+  addMeetingSeqLabel(agentId, index, afterEl) {
+    const agent = getAgent(agentId);
+    if (!agent) return;
+    const label = document.createElement('div');
+    label.className = 'meeting-seq-label';
+    label.innerHTML = `<span class="meeting-seq-badge">${index}</span>${this.escapeHtml(agent.name)} の発言`;
+    afterEl.before(label);
+  },
+
+  // --- Minutes modal ---
+  showMinutesModal(minutesData) {
+    const esc = (s) => this.escapeHtml(String(s ?? ''));
+    const el = document.getElementById('minutes-content');
+    if (!el) return;
+
+    if (!minutesData) {
+      el.innerHTML = `<div style="padding:24px 0;text-align:center;color:var(--text-secondary)">まだ会話がありません</div>`;
+    } else {
+      const { keywords, agentCounts, arc, summary, suggestions, messageCount } = minutesData;
+
+      const keywordsHtml = keywords.length
+        ? keywords.map(k => `<span class="minutes-keyword">${esc(k)}</span>`).join('')
+        : '<span class="minutes-keyword">（なし）</span>';
+
+      const arcHtml = arc.length
+        ? arc.map((a, i) => `${i > 0 ? ' → ' : ''}${esc(a)}`).join('')
+        : '（検出できませんでした）';
+
+      const agentParticipation = Object.entries(agentCounts).map(([id, cnt]) => {
+        const a = getAgent(id);
+        return a ? `${esc(a.name)}（${cnt}回）` : '';
+      }).filter(Boolean).join('　');
+
+      const suggestionsHtml = suggestions.map(s => {
+        const a = getAgent(s.agentId);
+        return `<div class="minutes-suggestion">
+          <span class="minutes-sug-dot" style="background:${a ? a.color : '#888'}"></span>
+          <div><span class="minutes-agent-label">${esc(a ? a.name : '')}</span><span class="minutes-sug-text">${esc(s.text)}</span></div>
+        </div>`;
+      }).join('');
+
+      el.innerHTML = `
+        <div class="minutes-content">
+          <h3 id="minutes-modal-title" style="font-size:15px;font-weight:700;margin-bottom:18px;padding-top:2px;">議事録 — ${messageCount}メッセージ</h3>
+
+          <div class="minutes-section">
+            <div class="minutes-section-title">会話の流れ</div>
+            <p class="minutes-body">${esc(summary)}</p>
+          </div>
+
+          <div class="minutes-section">
+            <div class="minutes-section-title">感情の軌跡</div>
+            <p class="minutes-body">${arcHtml}</p>
+          </div>
+
+          ${keywords.length ? `<div class="minutes-section">
+            <div class="minutes-section-title">キーワード</div>
+            <div>${keywordsHtml}</div>
+          </div>` : ''}
+
+          ${agentParticipation ? `<div class="minutes-section">
+            <div class="minutes-section-title">参加エージェント</div>
+            <p class="minutes-body">${agentParticipation}</p>
+          </div>` : ''}
+
+          <div class="minutes-section">
+            <div class="minutes-section-title">エージェントからの提案</div>
+            ${suggestionsHtml}
+          </div>
+        </div>
+      `;
+    }
+
+    const modal = document.getElementById('minutes-modal');
+    modal.classList.add('active');
+    this._scrollLockY = window.scrollY;
+    document.body.classList.add('modal-open');
+    document.body.style.top = -this._scrollLockY + 'px';
+    this.trapFocus(modal);
+  },
+
+  // --- Settings modal (API keys) ---
+  showSettingsModal(onSave) {
+    const el = document.getElementById('settings-content');
+    if (!el) return;
+    const esc = (s) => this.escapeHtml(String(s ?? ''));
+    const keys = Chat.getApiKeys();
+
+    const agentFieldsHtml = AGENTS.map(agent => `
+      <div class="api-field">
+        <span class="api-field-label" style="color:${agent.color}">${esc(agent.name)}</span>
+        <input class="api-field-input" type="password" data-agent-id="${esc(agent.id)}"
+          placeholder="個別キー（空欄=グローバルを使用）"
+          value="${esc(keys[agent.id] || '')}">
+      </div>
+    `).join('');
+
+    el.innerHTML = `
+      <div class="settings-content">
+        <h3 id="settings-modal-title" style="font-size:15px;font-weight:700;margin-bottom:18px;padding-top:2px;">設定 — APIキー</h3>
+
+        <div class="settings-section">
+          <div class="settings-section-title">グローバルAPIキー</div>
+          <div class="api-field">
+            <span class="api-field-label">全エージェント</span>
+            <input class="api-field-input" type="password" data-agent-id="global"
+              placeholder="sk-ant-..."
+              value="${esc(keys['global'] || '')}">
+          </div>
+          <div class="settings-note">
+            Anthropic APIキーを登録すると、エージェントが実際のClaudeとして応答します。<br>
+            キーはブラウザのローカルストレージのみに保存され、外部には送信されません。<br>
+            <a href="https://console.anthropic.com/" target="_blank" rel="noopener">APIキーを取得 →</a>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <div class="settings-section-title">エージェント別キー（上書き）</div>
+          <div class="agent-key-grid">${agentFieldsHtml}</div>
+        </div>
+
+        <button class="settings-save-btn" id="settings-save-btn">保存する</button>
+      </div>
+    `;
+
+    const modal = document.getElementById('settings-modal');
+    modal.classList.add('active');
+    this._scrollLockY = window.scrollY;
+    document.body.classList.add('modal-open');
+    document.body.style.top = -this._scrollLockY + 'px';
+    this.trapFocus(modal);
+
+    document.getElementById('settings-save-btn').addEventListener('click', () => {
+      const newKeys = {};
+      el.querySelectorAll('.api-field-input').forEach(input => {
+        const val = input.value.trim();
+        if (val) newKeys[input.dataset.agentId] = val;
+      });
+      Chat.saveApiKeys(newKeys);
+      if (onSave) onSave(newKeys);
+      this.closeModals();
+      this.showToast('APIキーを保存しました', 2000);
+    });
+  },
+
+  // --- Close all modals (extend to include new ones) ---
+  closeAllModals() {
+    const modals = document.querySelectorAll('.modal');
+    modals.forEach(m => m.classList.remove('active'));
+    document.body.classList.remove('modal-open');
+    document.body.style.top = '';
+    window.scrollTo(0, this._scrollLockY || 0);
+    this.releaseFocus();
   },
 };

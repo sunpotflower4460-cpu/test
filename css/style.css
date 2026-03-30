@@ -1018,3 +1018,419 @@ button:focus:not(:focus-visible) { outline: none; }
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ==========================================
+   じぶん会議 v6.0 – Conversation Modes
+   Individual / Random / Meeting + API keys
+   ========================================== */
+
+/* --- Conversation mode tab bar --- */
+#conv-mode-bar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 12px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border-vis);
+  flex-shrink: 0;
+}
+
+.conv-tab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 7px 4px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 11.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast);
+  white-space: nowrap;
+  font-family: var(--font);
+}
+.conv-tab svg { width: 13px; height: 13px; flex-shrink: 0; }
+.conv-tab.active { background: var(--accent); color: #fff; }
+.conv-tab:not(.active):hover { background: var(--bg-elevated); color: var(--text-primary); }
+
+.minutes-tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 7px 9px;
+  border: 1px solid var(--border-vis);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  font-family: var(--font);
+  transition: all var(--transition-fast);
+  flex-shrink: 0;
+}
+.minutes-tab-btn svg { width: 12px; height: 12px; }
+.minutes-tab-btn:hover { background: var(--bg-elevated); color: var(--text-primary); }
+
+/* --- Random panel --- */
+#random-panel {
+  display: none;
+  padding: 10px 16px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border-vis);
+  text-align: center;
+  flex-shrink: 0;
+}
+#random-panel.active { display: block; }
+
+.random-hint {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin-bottom: 6px;
+}
+
+.random-selected-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 14px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+  opacity: 0;
+  transform: scale(0.85);
+  transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.random-selected-badge.show { opacity: 1; transform: scale(1); }
+
+.random-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.7);
+}
+
+/* --- Meeting panel --- */
+#meeting-panel {
+  display: none;
+  padding: 10px 14px 12px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border-vis);
+  flex-shrink: 0;
+}
+#meeting-panel.active { display: block; }
+
+.meeting-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 9px;
+}
+.meeting-label {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.meeting-count-badge {
+  font-size: 11px;
+  color: var(--text-secondary);
+  padding: 2px 8px;
+  background: var(--bg-elevated);
+  border-radius: 10px;
+}
+.meeting-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-bottom: 9px;
+}
+.meeting-chip {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px 5px 8px;
+  border-radius: 20px;
+  border: 1.5px solid var(--border-vis);
+  background: var(--bg-elevated);
+  cursor: pointer;
+  transition: all 0.18s;
+  font-size: 12px;
+  color: var(--text-secondary);
+  user-select: none;
+  font-family: var(--font);
+}
+.meeting-chip.selected {
+  border-color: var(--chip-color, var(--accent));
+  background: transparent;
+  color: var(--chip-color, var(--accent));
+  box-shadow: 0 0 0 1px var(--chip-color, var(--accent)) inset;
+}
+.meeting-chip-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--chip-color, var(--accent));
+  flex-shrink: 0;
+}
+.meeting-note {
+  font-size: 11px;
+  color: var(--text-secondary);
+  line-height: 1.55;
+  padding: 7px 10px;
+  background: rgba(245,166,35,0.06);
+  border-left: 3px solid #f5a623;
+  border-radius: 0 6px 6px 0;
+}
+.meeting-note a {
+  color: var(--accent);
+  text-decoration: none;
+}
+.meeting-note a:hover { text-decoration: underline; }
+
+/* --- Opinion popups --- */
+.opinion-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin: 4px 0 0 52px;
+  padding: 3px 9px;
+  border: 1px solid var(--border-vis);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 11px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  font-family: var(--font);
+}
+.opinion-toggle-btn:hover { background: var(--bg-elevated); color: var(--text-secondary); }
+.opinion-toggle-btn svg { width: 10px; height: 10px; }
+
+.opinion-row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  padding: 6px 0 2px 52px;
+  animation: fadeSlideUp 0.28s ease both;
+}
+.opinion-row.collapsed { display: none; }
+
+.opinion-card {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-vis);
+  border-left: 3px solid var(--op-color, #888);
+  border-radius: 8px;
+  padding: 7px 10px;
+  min-width: 110px;
+  max-width: 210px;
+  animation: fadeSlideUp 0.2s ease both;
+}
+.opinion-card:nth-child(2) { animation-delay: 0.05s; }
+.opinion-card:nth-child(3) { animation-delay: 0.1s; }
+.opinion-agent-name {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--op-color, #888);
+  display: block;
+  margin-bottom: 3px;
+}
+.opinion-text {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.48;
+  margin: 0;
+}
+
+/* --- Meeting: sequential response group label --- */
+.meeting-seq-label {
+  font-size: 10.5px;
+  color: var(--text-muted);
+  margin: 8px 0 3px 52px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.meeting-seq-badge {
+  width: 17px; height: 17px;
+  border-radius: 50%;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-vis);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 9px; font-weight: 700;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+/* --- Settings modal --- */
+#settings-modal .modal-sheet { padding-bottom: 0; }
+
+.settings-content {
+  padding: 0 4px 20px;
+  max-height: 62vh;
+  overflow-y: auto;
+}
+.settings-section { margin-bottom: 24px; }
+.settings-section-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+  padding-bottom: 5px;
+  border-bottom: 1px solid var(--border-vis);
+}
+.api-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 9px;
+}
+.api-field-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-primary);
+  width: 56px;
+  flex-shrink: 0;
+}
+.api-field-input {
+  flex: 1;
+  padding: 8px 11px;
+  border-radius: 8px;
+  border: 1.5px solid var(--border-vis);
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  font-size: 12px;
+  font-family: 'Courier New', monospace;
+  outline: none;
+  transition: border-color var(--transition-fast);
+  min-width: 0;
+}
+.api-field-input:focus { border-color: var(--accent); }
+.api-field-input::placeholder {
+  color: var(--text-muted);
+  font-family: var(--font);
+  font-size: 11px;
+}
+.settings-note {
+  font-size: 11.5px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  padding: 9px 12px;
+  background: var(--bg-elevated);
+  border-radius: 8px;
+  margin-top: 6px;
+}
+.settings-note a { color: var(--accent); text-decoration: none; }
+.settings-note a:hover { text-decoration: underline; }
+.settings-save-btn {
+  width: 100%; padding: 12px;
+  border: none; border-radius: 12px;
+  background: var(--accent); color: #fff;
+  font-size: 14px; font-weight: 600;
+  cursor: pointer;
+  transition: opacity var(--transition-fast);
+  font-family: var(--font);
+  margin-top: 4px;
+}
+.settings-save-btn:hover { opacity: 0.88; }
+.agent-key-grid { display: grid; gap: 8px; }
+
+/* --- Minutes modal --- */
+.minutes-content {
+  padding: 0 4px 20px;
+  max-height: 66vh;
+  overflow-y: auto;
+}
+.minutes-section { margin-bottom: 20px; }
+.minutes-section-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--border-vis);
+}
+.minutes-body {
+  font-size: 13.5px;
+  line-height: 1.72;
+  color: var(--text-primary);
+}
+.minutes-keyword {
+  display: inline-block;
+  padding: 2px 8px; margin: 2px;
+  background: var(--bg-elevated);
+  border-radius: 4px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.minutes-suggestion {
+  display: flex; gap: 9px;
+  align-items: flex-start;
+  padding: 8px 10px;
+  background: var(--bg-elevated);
+  border-radius: 10px;
+  margin-bottom: 7px;
+}
+.minutes-sug-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  margin-top: 5px;
+  flex-shrink: 0;
+}
+.minutes-sug-text {
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--text-primary);
+}
+.minutes-agent-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 3px;
+  display: block;
+}
+
+/* --- Enhanced Agent Icons: SVG support --- */
+.agent-icon { flex-direction: column; }
+.agent-icon svg {
+  width: 24px; height: 24px;
+  display: block;
+  margin-bottom: 0;
+  flex-shrink: 0;
+}
+.agent-icon-label { line-height: 1; }
+
+/* --- Settings icon button in header --- */
+#settings-btn {
+  /* inherits .icon-btn */
+}
+
+/* --- Director picked animation --- */
+@keyframes directorPick {
+  0%   { box-shadow: 0 0 0 0 rgba(255,255,255,0.6); }
+  60%  { box-shadow: 0 0 0 8px rgba(255,255,255,0); transform: scale(1.12); }
+  100% { box-shadow: none; transform: scale(1); }
+}
+.agent-icon.director-picked {
+  animation: directorPick 0.55s ease forwards;
+}
+
+
+/* --- Avatar SVG sizing --- */
+.agent-avatar-sm svg,
+.persona-avatar-lg svg,
+.map-avatar svg {
+  width: 18px; height: 18px;
+  display: block;
+  flex-shrink: 0;
+}
+.persona-avatar-lg svg { width: 32px; height: 32px; }
+.map-avatar svg        { width: 16px; height: 16px; }

@@ -674,3 +674,115 @@ function getRandomResponse(agent, modeKey) {
 function getRandomAgent() {
   return AGENTS[Math.floor(Math.random() * AGENTS.length)];
 }
+
+// ==========================================
+// v6.0 – SVG Avatars + Opinion Pools
+// ==========================================
+
+(function patchAgents() {
+  const SVG_AVATARS = {
+    ray: `<svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg"><ellipse cx="14" cy="14" rx="10" ry="6.5" stroke="white" stroke-width="1.5"/><circle cx="14" cy="14" r="3.2" fill="white"/><circle cx="14" cy="14" r="1.3" fill="rgba(0,0,0,0.25)"/><line x1="3" y1="14" x2="6" y2="14" stroke="white" stroke-width="0.8" stroke-linecap="round" opacity="0.5"/><line x1="22" y1="14" x2="25" y2="14" stroke="white" stroke-width="0.8" stroke-linecap="round" opacity="0.5"/></svg>`,
+    joe: `<svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="14" cy="14" r="4.5" fill="white"/><line x1="14" y1="2" x2="14" y2="6.5" stroke="white" stroke-width="1.8" stroke-linecap="round"/><line x1="14" y1="21.5" x2="14" y2="26" stroke="white" stroke-width="1.8" stroke-linecap="round"/><line x1="2" y1="14" x2="6.5" y2="14" stroke="white" stroke-width="1.8" stroke-linecap="round"/><line x1="21.5" y1="14" x2="26" y2="14" stroke="white" stroke-width="1.8" stroke-linecap="round"/><line x1="5.5" y1="5.5" x2="8.7" y2="8.7" stroke="white" stroke-width="1.5" stroke-linecap="round"/><line x1="19.3" y1="19.3" x2="22.5" y2="22.5" stroke="white" stroke-width="1.5" stroke-linecap="round"/><line x1="22.5" y1="5.5" x2="19.3" y2="8.7" stroke="white" stroke-width="1.5" stroke-linecap="round"/><line x1="8.7" y1="19.3" x2="5.5" y2="22.5" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg>`,
+    mina: `<svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M14 23C14 23 3.5 16.5 3.5 10A5.5 5.5 0 0 1 14 7.5A5.5 5.5 0 0 1 24.5 10C24.5 16.5 14 23 14 23Z" stroke="white" stroke-width="1.5" stroke-linejoin="round" fill="white" fill-opacity="0.18"/></svg>`,
+    sato: `<svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M17 3L9 16H14L11 25L19 12H14L17 3Z" stroke="white" stroke-width="1.5" stroke-linejoin="round" fill="white" fill-opacity="0.15"/></svg>`,
+    ken: `<svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="4" y="18" width="5" height="7" rx="1" fill="white" opacity="0.65"/><rect x="11.5" y="12" width="5" height="13" rx="1" fill="white"/><rect x="19" y="7" width="5" height="18" rx="1" fill="white" opacity="0.8"/><line x1="3" y1="5" x2="25" y2="5" stroke="white" stroke-width="1.3" stroke-linecap="round" opacity="0.5"/></svg>`,
+    fio: `<svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="14" cy="8" r="3" fill="white" opacity="0.65"/><circle cx="14" cy="20" r="3" fill="white" opacity="0.65"/><circle cx="8" cy="14" r="3" fill="white" opacity="0.65"/><circle cx="20" cy="14" r="3" fill="white" opacity="0.65"/><circle cx="14" cy="14" r="3.8" fill="white"/></svg>`,
+    tom: `<svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 5.5C4 4.4 4.9 3.5 6 3.5H22C23.1 3.5 24 4.4 24 5.5V17C24 18.1 23.1 19 22 19H16L12 24.5V19H6C4.9 19 4 18.1 4 17V5.5Z" stroke="white" stroke-width="1.5" stroke-linejoin="round" fill="white" fill-opacity="0.15"/></svg>`,
+  };
+
+  const OPINION_POOLS = {
+    ray: [
+      '……その言葉の奥に、もうひとつ声があるような気がします。',
+      '……本当は何を感じているのか、静かに聞いてみてもいいかもしれません。',
+      '……答えは急がなくていい。まずそこにあるものを、ただ感じてみて。',
+    ],
+    joe: [
+      'いいね！その方向、俺には火が見えるぜ。',
+      'もっとそこを掘り下げてみようよ！面白くなってきた！',
+      'お前の中にある答え、絶対そこにある。諦めんなよ！',
+    ],
+    mina: [
+      'うん、そう感じるよね。ゆっくり一緒に考えようか。',
+      'それ、正直に話してくれてありがとう。',
+      '焦らなくていいよ。あなたのペースでいい。',
+    ],
+    sato: [
+      '甘いな。もう少し正直に向き合えるんじゃないか？',
+      'そこ、本当にそれでいいのか？よく考えてみろよ。',
+      '言い訳じゃないよな？腹を割って話せよ。',
+    ],
+    ken: [
+      'ロジカルに整理すると、課題が3つに絞れます。',
+      'その感情の根拠を言語化できると、次が見えてきます。',
+      'データと直感の両方が揃ったとき、判断が最適化されます。',
+    ],
+    fio: [
+      'ねえ、それを別の角度から見たらすごく面白くない？',
+      'なんか、もっとロマンチックに考えてみてもいいかも。',
+      'あなたの感性、もっと信じていいと思う。',
+    ],
+    tom: [
+      'まあ、ぶっちゃけそういうことだよね。',
+      'うーん、でももっとシンプルに考えてみたら？',
+      'なんか難しく考えすぎじゃない？',
+    ],
+  };
+
+  // Director scoring: agent → keywords that signal this agent is a good fit
+  const DIRECTOR_KEYWORDS = {
+    ray:  ['本音', '本当', 'なぜ', '意味', 'わからない', 'もやもや', '感じ', '哲学', '存在', '自分'],
+    joe:  ['やりたい', '夢', '目標', '挑戦', '行動', 'やる', '始め', '動', '諦め', '希望', '勇気'],
+    mina: ['つらい', '苦しい', '泣', '悲しい', '限界', '疲れ', 'しんどい', '不安', '怖い', '孤独'],
+    sato: ['悔しい', '許せない', '怒', '腹', 'ふざけ', '嫌い', '文句', '不満', 'ムカ', '闘'],
+    ken:  ['計画', '整理', '論理', '分析', '戦略', '効率', '仕事', 'ビジネス', '問題', '解決'],
+    fio:  ['創作', '芸術', '感性', '美', '旅', '自然', '音楽', '絵', 'デザイン', 'インスピレーション'],
+    tom:  ['実際', 'ぶっちゃけ', '現実', 'お金', '普通', '正直', 'リアル', 'どうせ', 'まあ'],
+  };
+
+  AGENTS.forEach(agent => {
+    agent.avatar = SVG_AVATARS[agent.id] || null;
+    agent.opinionPool = OPINION_POOLS[agent.id] || [];
+    agent.directorKeywords = DIRECTOR_KEYWORDS[agent.id] || [];
+  });
+})();
+
+// --- Director: select best agent for given text ---
+function selectDirectorAgent(text, excludeId) {
+  const scores = {};
+  AGENTS.forEach(agent => {
+    if (agent.id === excludeId) return;
+    let score = 0;
+    (agent.directorKeywords || []).forEach(kw => {
+      if (text.includes(kw)) score += 2;
+    });
+    scores[agent.id] = score;
+  });
+
+  // Pain/crisis → always mina first
+  if (/つらい|苦しい|泣|死にたい|限界|もう無理|消えたい/.test(text)) {
+    scores['mina'] = (scores['mina'] || 0) + 10;
+  }
+  // Action/goal → joe
+  if (/やりたい|夢|目標|挑戦|やるぞ|一歩/.test(text)) {
+    scores['joe'] = (scores['joe'] || 0) + 8;
+  }
+  // Analytical → ken
+  if (/整理|計画|どうすれば|問題|解決|方法/.test(text)) {
+    scores['ken'] = (scores['ken'] || 0) + 6;
+  }
+  // Reflection → ray
+  if (/本当は|本音|なぜ|どうして|わからない/.test(text)) {
+    scores['ray'] = (scores['ray'] || 0) + 6;
+  }
+
+  const candidates = AGENTS.filter(a => a.id !== excludeId);
+  const best = candidates.reduce((prev, curr) =>
+    (scores[curr.id] || 0) > (scores[prev.id] || 0) ? curr : prev
+  , candidates[0]);
+
+  // If tie (score 0), pick randomly
+  const maxScore = Math.max(...candidates.map(a => scores[a.id] || 0));
+  if (maxScore === 0) return getRandomAgent();
+
+  return best;
+}
