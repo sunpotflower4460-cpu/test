@@ -1,11 +1,13 @@
 // ==========================================
-// じぶん会議 – UI v4.0
-// Light/Dark + Native App Feel
+// じぶん会議 – UI v5.0
+// World-class quality update
 // ==========================================
 
 const UI = {
   els: {},
   _scrollLockY: 0,
+  _focusTrapHandler: null,
+  _previousFocus: null,
 
   init() {
     this.els = {
@@ -26,9 +28,11 @@ const UI = {
       sessionList: document.getElementById('session-list'),
       chatArea: document.getElementById('chat-area'),
       messages: document.getElementById('messages'),
+      emptyState: document.getElementById('empty-state'),
       agentBar: document.getElementById('agent-bar'),
       agentIcons: document.getElementById('agent-icons'),
       inputArea: document.getElementById('input-area'),
+      inputWrapper: document.querySelector('.input-wrapper'),
       userInput: document.getElementById('user-input'),
       sendBtn: document.getElementById('send-btn'),
       personaModal: document.getElementById('persona-modal'),
@@ -36,12 +40,15 @@ const UI = {
       mapModal: document.getElementById('map-modal'),
       relationshipMap: document.getElementById('relationship-map'),
       modeToast: document.getElementById('mode-toast'),
+      scrollToBottomBtn: document.getElementById('scroll-to-bottom-btn'),
     };
 
     this.initTheme();
     this._agentOnSelect = null;
     this._agentOnLongPress = null;
     this.initAgentBarEvents();
+    this.initScrollToBottomBtn();
+    this.initModalSwipe();
   },
 
   // --- Theme ---
@@ -50,7 +57,6 @@ const UI = {
     if (saved) {
       document.documentElement.setAttribute('data-theme', saved);
     }
-    // If no saved preference, CSS @media handles it automatically
   },
 
   toggleTheme() {
@@ -64,14 +70,12 @@ const UI = {
     } else if (current === 'light') {
       next = 'dark';
     } else {
-      // No explicit setting, using OS default. Toggle to opposite.
       next = isDarkOS ? 'light' : 'dark';
     }
 
     root.setAttribute('data-theme', next);
     localStorage.setItem('jibun-theme', next);
 
-    // Update theme-color meta
     const meta = document.querySelector('meta[name="theme-color"]:not([media])') ||
                  document.querySelector('meta[name="theme-color"]');
     if (meta) {
@@ -114,11 +118,11 @@ const UI = {
   // --- Sidebar ---
   openSidebar() {
     this.els.sidebar.classList.add('open');
-    this.els.sidebarOverlay.classList.add('open');
+    if (this.els.sidebarOverlay) this.els.sidebarOverlay.classList.add('open');
   },
   closeSidebar() {
     this.els.sidebar.classList.remove('open');
-    this.els.sidebarOverlay.classList.remove('open');
+    if (this.els.sidebarOverlay) this.els.sidebarOverlay.classList.remove('open');
   },
 
   // --- Agent bar ---
@@ -163,6 +167,9 @@ const UI = {
       el.className = 'agent-icon' + (selectedId === agent.id ? ' selected' : '');
       el.style.background = agent.gradient;
       el.dataset.agentId = agent.id;
+      el.setAttribute('role', 'button');
+      el.setAttribute('tabindex', '0');
+      el.setAttribute('aria-label', agent.name + '（' + agent.title + '）');
       el.innerHTML = `
         ${this.escapeHtml(agent.initial)}
         <span class="agent-icon-label">${this.escapeHtml(agent.name)}</span>
@@ -173,12 +180,134 @@ const UI = {
     const randEl = document.createElement('div');
     randEl.className = 'agent-icon agent-icon--random' + (selectedId === 'random' ? ' selected' : '');
     randEl.dataset.agentId = 'random';
+    randEl.setAttribute('role', 'button');
+    randEl.setAttribute('tabindex', '0');
+    randEl.setAttribute('aria-label', 'ランダム');
     randEl.innerHTML = `?<span class="agent-icon-label">ランダム</span>`;
     this.els.agentIcons.appendChild(randEl);
   },
 
+  // --- Generating state ---
+  setGeneratingState(generating) {
+    const btn = this.els.sendBtn;
+    const wrapper = this.els.inputWrapper;
+    if (generating) {
+      btn.classList.add('loading');
+      btn.disabled = true;
+      if (wrapper) wrapper.classList.add('generating');
+    } else {
+      btn.classList.remove('loading');
+      if (wrapper) wrapper.classList.remove('generating');
+      btn.disabled = this.els.userInput.value.trim() === '';
+    }
+  },
+
+  // --- Agent-specific placeholder ---
+  setAgentPlaceholder(agent) {
+    const placeholder = (agent && agent.placeholder) ? agent.placeholder : 'ここに書く…';
+    this.els.userInput.setAttribute('placeholder', placeholder);
+  },
+
+  // --- Scroll-to-bottom button ---
+  initScrollToBottomBtn() {
+    const btn = this.els.scrollToBottomBtn;
+    if (!btn) return;
+    btn.removeAttribute('hidden');
+
+    this.els.chatArea.addEventListener('scroll', () => {
+      const { scrollTop, scrollHeight, clientHeight } = this.els.chatArea;
+      const distFromBottom = scrollHeight - scrollTop - clientHeight;
+      btn.classList.toggle('visible', distFromBottom > 120);
+    });
+
+    btn.addEventListener('click', () => this.scrollToBottom());
+  },
+
+  // --- Modal swipe-to-close ---
+  initModalSwipe() {
+    document.querySelectorAll('.modal-sheet').forEach(sheet => {
+      let startY = 0;
+      let currentY = 0;
+      let dragging = false;
+
+      sheet.addEventListener('touchstart', (e) => {
+        startY = e.touches[0].clientY;
+        currentY = startY;
+        dragging = true;
+        sheet.style.transition = 'none';
+      }, { passive: true });
+
+      sheet.addEventListener('touchmove', (e) => {
+        if (!dragging) return;
+        currentY = e.touches[0].clientY;
+        const diff = currentY - startY;
+        if (diff > 0) sheet.style.transform = `translateY(${diff}px)`;
+      }, { passive: true });
+
+      sheet.addEventListener('touchend', () => {
+        if (!dragging) return;
+        dragging = false;
+        sheet.style.transition = '';
+        const diff = currentY - startY;
+        if (diff > 80) {
+          sheet.style.transform = '';
+          this.closeModals();
+        } else {
+          sheet.style.transform = '';
+        }
+      });
+    });
+  },
+
+  // --- Focus trap for modals ---
+  trapFocus(modal) {
+    this._previousFocus = document.activeElement;
+    const focusable = modal.querySelectorAll(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    );
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (first) setTimeout(() => first.focus(), 50);
+
+    this._focusTrapHandler = (e) => {
+      if (e.key !== 'Tab') return;
+      if (e.shiftKey) {
+        if (document.activeElement === first) { e.preventDefault(); last && last.focus(); }
+      } else {
+        if (document.activeElement === last) { e.preventDefault(); first && first.focus(); }
+      }
+    };
+    modal.addEventListener('keydown', this._focusTrapHandler);
+  },
+
+  releaseFocus() {
+    [this.els.personaModal, this.els.mapModal].forEach(modal => {
+      if (modal && this._focusTrapHandler) {
+        modal.removeEventListener('keydown', this._focusTrapHandler);
+      }
+    });
+    this._focusTrapHandler = null;
+    if (this._previousFocus) {
+      this._previousFocus.focus();
+      this._previousFocus = null;
+    }
+  },
+
+  // --- Empty state ---
+  showEmptyState() {
+    if (this.els.emptyState) {
+      this.els.emptyState.removeAttribute('hidden');
+    }
+  },
+  hideEmptyState() {
+    if (this.els.emptyState) {
+      this.els.emptyState.setAttribute('hidden', '');
+    }
+  },
+
   // --- Messages ---
   addUserMessage(text) {
+    this.hideEmptyState();
     const div = document.createElement('div');
     div.className = 'message message-user';
     div.innerHTML = `<div class="bubble">${this.escapeHtml(text)}</div>`;
@@ -187,6 +316,7 @@ const UI = {
   },
 
   addAgentMessage(agent, text, mode) {
+    this.hideEmptyState();
     const div = document.createElement('div');
     div.className = `message message-agent ${agent.animClass}`;
     const modeLabel = mode ? `<span class="agent-mode-label">— ${this.escapeHtml(mode.name)}</span>` : '';
@@ -306,7 +436,7 @@ const UI = {
         <div class="persona-avatar-lg" style="background:${agent.gradient};">
           ${esc(agent.initial)}
         </div>
-        <div class="persona-name" style="color:${agent.color};">${esc(agent.name)}</div>
+        <div id="persona-modal-name" class="persona-name" style="color:${agent.color};">${esc(agent.name)}</div>
         <div class="persona-role">${esc(agent.role)} — ${esc(agent.title)}</div>
       </div>
 
@@ -360,6 +490,7 @@ const UI = {
     this._scrollLockY = window.scrollY;
     document.body.classList.add('modal-open');
     document.body.style.top = -this._scrollLockY + 'px';
+    this.trapFocus(this.els.personaModal);
   },
 
   // --- Map modal ---
@@ -376,7 +507,7 @@ const UI = {
     `).join('');
 
     this.els.relationshipMap.innerHTML = `
-      <div class="map-title">7人の関係性</div>
+      <div id="map-modal-title" class="map-title">7人の関係性</div>
       ${itemsHtml}
     `;
 
@@ -384,6 +515,7 @@ const UI = {
     this._scrollLockY = window.scrollY;
     document.body.classList.add('modal-open');
     document.body.style.top = -this._scrollLockY + 'px';
+    this.trapFocus(this.els.mapModal);
   },
 
   closeModals() {
@@ -392,6 +524,7 @@ const UI = {
     document.body.classList.remove('modal-open');
     document.body.style.top = '';
     window.scrollTo(0, this._scrollLockY || 0);
+    this.releaseFocus();
   },
 
   // --- Session list ---
@@ -401,10 +534,13 @@ const UI = {
       const li = document.createElement('li');
       li.className = s.id === activeId ? 'active' : '';
 
+      // Row: title + delete button
+      const row = document.createElement('div');
+      row.className = 'session-row';
+
       const titleSpan = document.createElement('span');
       titleSpan.className = 'session-title-text';
       titleSpan.textContent = s.title;
-      titleSpan.addEventListener('click', () => onSelect(s.id));
 
       const deleteBtn = document.createElement('button');
       deleteBtn.className = 'session-delete-btn';
@@ -416,8 +552,21 @@ const UI = {
         onDelete(s.id);
       });
 
-      li.appendChild(titleSpan);
-      li.appendChild(deleteBtn);
+      row.appendChild(titleSpan);
+      row.appendChild(deleteBtn);
+      row.addEventListener('click', () => onSelect(s.id));
+      li.appendChild(row);
+
+      // Preview text from first user message
+      const firstUserMsg = s.messages && s.messages.find(m => m.role === 'user');
+      if (firstUserMsg && firstUserMsg.text) {
+        const preview = document.createElement('span');
+        preview.className = 'session-preview';
+        const t = firstUserMsg.text;
+        preview.textContent = t.length > 22 ? t.substring(0, 22) + '…' : t;
+        li.appendChild(preview);
+      }
+
       this.els.sessionList.appendChild(li);
     });
   },
@@ -428,12 +577,17 @@ const UI = {
 
   scrollToBottom() {
     requestAnimationFrame(() => {
-      this.els.chatArea.scrollTop = this.els.chatArea.scrollHeight;
+      if (this.els.chatArea) {
+        this.els.chatArea.scrollTop = this.els.chatArea.scrollHeight;
+      }
     });
   },
 
   clearMessages() {
-    this.els.messages.innerHTML = '';
+    // Remove all .message elements but keep #empty-state
+    const msgs = this.els.messages.querySelectorAll('.message');
+    msgs.forEach(m => m.remove());
+    this.showEmptyState();
   },
 
   escapeHtml(text) {

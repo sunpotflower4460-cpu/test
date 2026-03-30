@@ -1,6 +1,6 @@
 // ==========================================
-// じぶん会議 – メインアプリ v4.0
-// Light/Dark + Native App Feel
+// じぶん会議 – メインアプリ v5.0
+// World-class quality update
 // ==========================================
 
 (function () {
@@ -24,9 +24,12 @@
     if (session && session.messages.length > 0) {
       UI.setSessionTitle(session.title);
       restoreMessages(session);
+    } else {
+      UI.showEmptyState();
     }
 
     UI.updateModeIndicator(RESPONSE_MODES[currentMode].name);
+    UI.initModalSwipe();
   }
 
   function bindEvents() {
@@ -62,6 +65,7 @@
       renderSessionList();
       UI.closeSidebar();
       selectedAgentId = null;
+      UI.setAgentPlaceholder(null);
       renderAgentBar();
     });
 
@@ -109,6 +113,36 @@
     document.querySelectorAll('.modal-handle').forEach(el => {
       el.addEventListener('click', () => UI.closeModals());
     });
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+      const inputFocused = document.activeElement === UI.els.userInput;
+
+      if (e.key === 'Escape') {
+        UI.closeModals();
+        UI.closeSidebar();
+        return;
+      }
+
+      if (!inputFocused) {
+        if (e.key === '1') activateModeBtn('short');
+        else if (e.key === '2') activateModeBtn('medium');
+        else if (e.key === '3') activateModeBtn('long');
+      }
+    });
+  }
+
+  function activateModeBtn(mode) {
+    const btn = document.querySelector('.mode-btn[data-mode="' + mode + '"]');
+    if (!btn) return;
+    const prev = currentMode;
+    document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    setResponseMode(mode);
+    UI.updateModeIndicator(RESPONSE_MODES[currentMode].name);
+    if (prev !== currentMode) {
+      UI.showToast(RESPONSE_MODES[currentMode].name + ' モードに切替', 2000);
+    }
   }
 
   function renderAgentBar() {
@@ -120,9 +154,15 @@
 
         if (selectedAgentId && selectedAgentId !== 'random') {
           const a = getAgent(selectedAgentId);
-          if (a) UI.showToast(a.name + '（' + a.title + '）を選択', 1500);
+          if (a) {
+            UI.setAgentPlaceholder(a);
+            UI.showToast(a.name + '（' + a.title + '）を選択', 1500);
+          }
         } else if (selectedAgentId === 'random') {
+          UI.setAgentPlaceholder(null);
           UI.showToast('ランダム：誰かが答えます', 1500);
+        } else {
+          UI.setAgentPlaceholder(null);
         }
       },
       (id) => {
@@ -158,6 +198,10 @@
   }
 
   function restoreMessages(session) {
+    if (!session.messages || session.messages.length === 0) {
+      UI.showEmptyState();
+      return;
+    }
     session.messages.forEach(msg => {
       if (msg.role === 'user') {
         UI.addUserMessage(msg.text);
@@ -190,6 +234,7 @@
     }
 
     isGenerating = true;
+    UI.setGeneratingState(true);
 
     let targetId;
     if (selectedAgentId === 'random') {
@@ -205,6 +250,7 @@
       await handleAgentResponse(targetId, text);
     } finally {
       isGenerating = false;
+      UI.setGeneratingState(false);
     }
   }
 

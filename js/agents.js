@@ -17,6 +17,7 @@ const AGENTS = [
     gradient: 'var(--ray-g)',
     bubbleClass: 'bubble-ray',
     animClass: 'msg-anim-fade',
+    placeholder: '静かに、ここに書いて…',
     pronoun: '私',
 
     layer0: {
@@ -110,6 +111,7 @@ const AGENTS = [
     gradient: 'var(--joe-g)',
     bubbleClass: 'bubble-joe',
     animClass: 'msg-anim-pop',
+    placeholder: 'さあ、ぶつけてこい！',
     pronoun: '俺',
 
     layer0: {
@@ -202,6 +204,7 @@ const AGENTS = [
     gradient: 'var(--mina-g)',
     bubbleClass: 'bubble-mina',
     animClass: 'msg-anim-soft',
+    placeholder: 'なんでも話して…',
     pronoun: 'わたし',
 
     layer0: {
@@ -294,6 +297,7 @@ const AGENTS = [
     gradient: 'var(--sato-g)',
     bubbleClass: 'bubble-sato',
     animClass: 'msg-anim-slide',
+    placeholder: '言いたいこと、言えよ。',
     pronoun: '俺',
 
     layer0: {
@@ -386,6 +390,7 @@ const AGENTS = [
     gradient: 'var(--ken-g)',
     bubbleClass: 'bubble-ken',
     animClass: 'msg-anim-precise',
+    placeholder: '状況を整理して伝えてください。',
     pronoun: '私',
 
     layer0: {
@@ -478,6 +483,7 @@ const AGENTS = [
     gradient: 'var(--fio-g)',
     bubbleClass: 'bubble-fio',
     animClass: 'msg-anim-drift',
+    placeholder: '今、どんな感じがする？',
     pronoun: '僕',
 
     layer0: {
@@ -570,6 +576,7 @@ const AGENTS = [
     gradient: 'var(--tom-g)',
     bubbleClass: 'bubble-tom',
     animClass: 'msg-anim-bounce',
+    placeholder: 'ぶっちゃけ、どうなの？',
     pronoun: '俺',
 
     layer0: {
