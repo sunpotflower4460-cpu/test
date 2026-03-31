@@ -156,37 +156,6 @@ const UI = {
     });
   },
 
-  renderAgentIcons(selectedId, onSelect, onLongPress) {
-    this._agentOnSelect = onSelect;
-    this._agentOnLongPress = onLongPress;
-
-    this.els.agentIcons.innerHTML = '';
-
-    AGENTS.forEach(agent => {
-      const el = document.createElement('div');
-      el.className = 'agent-icon' + (selectedId === agent.id ? ' selected' : '');
-      el.style.background = agent.gradient;
-      el.dataset.agentId = agent.id;
-      el.setAttribute('role', 'button');
-      el.setAttribute('tabindex', '0');
-      el.setAttribute('aria-label', agent.name + '（' + agent.title + '）');
-      el.innerHTML = `
-        ${this.escapeHtml(agent.initial)}
-        <span class="agent-icon-label">${this.escapeHtml(agent.name)}</span>
-      `;
-      this.els.agentIcons.appendChild(el);
-    });
-
-    const randEl = document.createElement('div');
-    randEl.className = 'agent-icon agent-icon--random' + (selectedId === 'random' ? ' selected' : '');
-    randEl.dataset.agentId = 'random';
-    randEl.setAttribute('role', 'button');
-    randEl.setAttribute('tabindex', '0');
-    randEl.setAttribute('aria-label', 'ランダム');
-    randEl.innerHTML = `?<span class="agent-icon-label">ランダム</span>`;
-    this.els.agentIcons.appendChild(randEl);
-  },
-
   // --- Generating state ---
   setGeneratingState(generating) {
     const btn = this.els.sendBtn;
@@ -281,8 +250,9 @@ const UI = {
   },
 
   releaseFocus() {
-    [this.els.personaModal, this.els.mapModal].forEach(modal => {
-      if (modal && this._focusTrapHandler) {
+    // B4: release from ALL modals, not just persona/map
+    document.querySelectorAll('.modal').forEach(modal => {
+      if (this._focusTrapHandler) {
         modal.removeEventListener('keydown', this._focusTrapHandler);
       }
     });
@@ -297,11 +267,13 @@ const UI = {
   showEmptyState() {
     if (this.els.emptyState) {
       this.els.emptyState.removeAttribute('hidden');
+      this.els.emptyState.removeAttribute('aria-hidden'); // B5
     }
   },
   hideEmptyState() {
     if (this.els.emptyState) {
       this.els.emptyState.setAttribute('hidden', '');
+      this.els.emptyState.setAttribute('aria-hidden', 'true'); // B5
     }
   },
 
@@ -580,9 +552,11 @@ const UI = {
   },
 
   clearMessages() {
-    // Remove all .message elements but keep #empty-state
-    const msgs = this.els.messages.querySelectorAll('.message');
-    msgs.forEach(m => m.remove());
+    // B2: also remove opinion/meeting sibling elements outside .message
+    const toRemove = this.els.messages.querySelectorAll(
+      '.message, .opinion-toggle-btn, .opinion-row, .meeting-seq-label'
+    );
+    toRemove.forEach(el => el.remove());
     this.showEmptyState();
   },
 
@@ -658,13 +632,26 @@ const UI = {
   showDirectorBadge(agent) {
     const badge = document.getElementById('random-selected-badge');
     const nameEl = document.getElementById('random-agent-name');
+    const hint  = document.querySelector('#random-panel .random-hint');
     if (!badge || !nameEl) return;
-    badge.style.background = agent.gradient;
-    nameEl.textContent = agent.name + '（' + agent.title + '）';
-    badge.classList.remove('show');
-    void badge.offsetWidth;
-    badge.classList.add('show');
-    setTimeout(() => badge.classList.remove('show'), 3000);
+
+    // D6: show "selecting…" state first
+    if (hint) {
+      hint.innerHTML = '<span class="random-selecting-text">AIが最適なエージェントを選んでいます…</span>';
+    }
+
+    setTimeout(() => {
+      badge.style.background = agent.gradient;
+      nameEl.textContent = agent.name + '（' + agent.title + '）';
+      badge.classList.remove('show');
+      void badge.offsetWidth;
+      badge.classList.add('show');
+      if (hint) hint.innerHTML = this.escapeHtml(agent.name) + ' が担当します';
+      setTimeout(() => {
+        badge.classList.remove('show');
+        if (hint) hint.textContent = 'AIが今のあなたに最適なエージェントを自動で選びます';
+      }, 3500);
+    }, 400);
   },
 
   // --- Render meeting participant picker ---
@@ -674,15 +661,22 @@ const UI = {
     if (!picker) return;
     picker.innerHTML = '';
 
+    const atMax = selectedIds.length >= 7;
+
     AGENTS.forEach(agent => {
       const chip = document.createElement('div');
       const isSelected = selectedIds.includes(agent.id);
-      chip.className = 'meeting-chip' + (isSelected ? ' selected' : '');
+      // B7: visually disable unselected chips when at max
+      const isDisabled = atMax && !isSelected;
+      chip.className = 'meeting-chip'
+        + (isSelected ? ' selected' : '')
+        + (isDisabled ? ' chip-disabled' : '');
       chip.style.setProperty('--chip-color', agent.color);
       chip.dataset.agentId = agent.id;
 
       chip.innerHTML = `<span class="meeting-chip-dot"></span>${this.escapeHtml(agent.name)}`;
       chip.addEventListener('click', () => {
+        if (isDisabled) return;
         const cur = [...selectedIds];
         const idx = cur.indexOf(agent.id);
         if (idx >= 0) {
@@ -695,7 +689,11 @@ const UI = {
       picker.appendChild(chip);
     });
 
-    if (countEl) countEl.textContent = selectedIds.length + ' / 7';
+    if (countEl) {
+      countEl.textContent = selectedIds.length + ' / 7';
+      // B7: badge turns amber at max
+      countEl.classList.toggle('warn', atMax);
+    }
   },
 
   // --- Add opinion popup row below a message element ---
@@ -716,7 +714,14 @@ const UI = {
       const card = document.createElement('div');
       card.className = 'opinion-card';
       card.style.setProperty('--op-color', op.agent.color);
-      card.innerHTML = `<span class="opinion-agent-name">${this.escapeHtml(op.agent.name)}</span><p class="opinion-text">${this.escapeHtml(op.text)}</p>`;
+      // D5: include small avatar in card header
+      const avatarContent = op.agent.avatar || this.escapeHtml(op.agent.initial);
+      card.innerHTML = `
+        <div class="opinion-header">
+          <span class="opinion-avatar" style="background:${op.agent.gradient}">${avatarContent}</span>
+          <span class="opinion-agent-name">${this.escapeHtml(op.agent.name)}</span>
+        </div>
+        <p class="opinion-text">${this.escapeHtml(op.text)}</p>`;
       row.appendChild(card);
     });
 
@@ -774,7 +779,7 @@ const UI = {
       }).join('');
 
       el.innerHTML = `
-        <div class="minutes-content">
+        <div class="minutes-content" style="padding:4px 4px 16px">
           <h3 id="minutes-modal-title" style="font-size:15px;font-weight:700;margin-bottom:18px;padding-top:2px;">議事録 — ${messageCount}メッセージ</h3>
 
           <div class="minutes-section">
@@ -830,7 +835,7 @@ const UI = {
     `).join('');
 
     el.innerHTML = `
-      <div class="settings-content">
+      <div class="settings-content" style="padding:4px 4px 16px">
         <h3 id="settings-modal-title" style="font-size:15px;font-weight:700;margin-bottom:18px;padding-top:2px;">設定 — APIキー</h3>
 
         <div class="settings-section">
@@ -877,13 +882,4 @@ const UI = {
     });
   },
 
-  // --- Close all modals (extend to include new ones) ---
-  closeAllModals() {
-    const modals = document.querySelectorAll('.modal');
-    modals.forEach(m => m.classList.remove('active'));
-    document.body.classList.remove('modal-open');
-    document.body.style.top = '';
-    window.scrollTo(0, this._scrollLockY || 0);
-    this.releaseFocus();
-  },
 };

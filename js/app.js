@@ -37,7 +37,7 @@
     }
 
     UI.updateModeIndicator(RESPONSE_MODES[currentMode].name);
-    UI.initModalSwipe();
+    // NOTE: initModalSwipe is already called inside UI.init() — do not call again (B3)
 
     // Default conv mode UI
     setConvMode('individual');
@@ -202,6 +202,8 @@
       meetingAgentIds = AGENTS.slice(0, 3).map(a => a.id);
       renderMeetingPicker();
     }
+
+    updateMeetingSendState(); // D4
   }
 
   // ─────────────────── Agent Bar ───────────────────
@@ -240,7 +242,20 @@
       if (ids.length > 7) return;
       meetingAgentIds = ids;
       renderMeetingPicker();
+      updateMeetingSendState(); // D4: keep send btn in sync
     });
+    updateMeetingSendState();
+  }
+
+  // D4: grey-out send button when meeting has < 2 participants
+  function updateMeetingSendState() {
+    const btn = UI.els.sendBtn;
+    if (!btn) return;
+    if (convMode === 'meeting' && meetingAgentIds.length < 2) {
+      btn.classList.add('meeting-insufficient');
+    } else {
+      btn.classList.remove('meeting-insufficient');
+    }
   }
 
   // ─────────────────── Session List ───────────────────
@@ -372,6 +387,7 @@
     // Director picks the best agent
     const chosenAgent = selectDirectorAgent(userText, null);
     UI.showDirectorBadge(chosenAgent);
+    UI.flashDirectorPick(chosenAgent.id); // B6: was missing
 
     // Small delay for the "selection" feeling
     await delay(600);
