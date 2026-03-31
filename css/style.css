@@ -1555,3 +1555,335 @@ button:focus:not(:focus-visible) { outline: none; }
   cursor: not-allowed !important;
   pointer-events: none;
 }
+
+/* ==========================================
+   じぶん会議 v7.0 – UI Quality Upgrade
+   ========================================== */
+
+/* ── 1. Conv-mode-bar: iOS-style segmented control track ── */
+#conv-mode-bar {
+  gap: 8px;
+  padding: 7px 12px 8px;
+}
+.conv-tabs-group {
+  flex: 1;
+  display: flex;
+  background: var(--bg-elevated);
+  border-radius: 11px;
+  padding: 3px;
+  gap: 2px;
+  border: 1px solid var(--border-vis);
+}
+/* Override v6.0 solid-accent active to inner-pill style */
+#conv-mode-bar .conv-tab.active {
+  background: var(--bg-surface);
+  color: var(--accent);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.14), 0 1px 2px rgba(0,0,0,0.08);
+  transform: none;   /* override v6.1 scale(1.02) */
+  font-weight: 600;
+}
+#conv-mode-bar .conv-tab:not(.active) {
+  background: transparent;
+  color: var(--text-muted);
+}
+#conv-mode-bar .conv-tab:not(.active):hover {
+  background: var(--bg-hover);
+  color: var(--text-secondary);
+  box-shadow: none;
+}
+/* Light theme: active pill needs white bg */
+[data-theme="light"] #conv-mode-bar .conv-tab.active {
+  background: #ffffff;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.10);
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) #conv-mode-bar .conv-tab.active {
+    background: #ffffff;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.10);
+  }
+}
+.conv-tab svg { width: 14px; height: 14px; }
+
+/* Minutes button: refined */
+.minutes-tab-btn {
+  padding: 7px 11px;
+  border-radius: 11px;
+  font-size: 11.5px;
+}
+.minutes-tab-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+}
+
+/* ── 2. User message bubble: subtle accent tint ── */
+.message-user .bubble {
+  background: color-mix(in srgb, var(--bg-elevated), var(--accent) 6%);
+  border-color: color-mix(in srgb, var(--border-vis), var(--accent) 16%);
+}
+
+/* ── 3. Agent message: better readability ── */
+.message-agent .bubble {
+  font-size: 0.89rem;
+  line-height: 1.78;
+  padding: 13px 17px;
+}
+
+/* ── 4. Empty state: gradient title + bigger orb glow ── */
+.empty-title {
+  font-size: 1.1rem;
+  letter-spacing: 0.06em;
+  background: linear-gradient(135deg, var(--accent) 0%, var(--fio-c) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.empty-orb {
+  width: 72px;
+  height: 72px;
+  box-shadow: 0 0 48px rgba(123,108,240,0.22), 0 0 96px rgba(92,186,168,0.10);
+}
+.empty-subtitle {
+  font-size: 0.84rem;
+  line-height: 2;
+  color: var(--text-secondary);
+}
+
+/* ── 5. Send button: gradient + deeper glow ── */
+.send-btn:not(:disabled):not(.loading) {
+  background: linear-gradient(
+    135deg,
+    var(--accent) 0%,
+    color-mix(in srgb, var(--accent), #60d8c4 28%) 100%
+  );
+  box-shadow: 0 2px 12px rgba(123,108,240,0.40), 0 1px 3px rgba(0,0,0,0.12);
+}
+.send-btn:not(:disabled):not(.loading):hover {
+  opacity: 1;
+  box-shadow: 0 4px 20px rgba(123,108,240,0.55), 0 2px 6px rgba(0,0,0,0.10);
+  transform: translateY(-1px);
+}
+.send-btn:not(:disabled):not(.loading):active {
+  transform: scale(0.88) !important;
+  box-shadow: 0 1px 6px rgba(123,108,240,0.30) !important;
+}
+
+/* ── 6. Input wrapper: refined radius + focus ring ── */
+.input-wrapper {
+  border-radius: 22px;
+}
+.input-wrapper:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft), 0 2px 8px var(--shadow-color);
+}
+
+/* ── 7. Agent icon selected: double-ring ── */
+.agent-icon.selected {
+  box-shadow:
+    0 0 0 2px var(--bg-base),
+    0 0 0 4.5px var(--accent),
+    0 4px 16px rgba(123,108,240,0.28);
+}
+/* Hover: lift + subtle glow */
+.agent-icon:hover:not(.selected) {
+  transform: translateY(-3px) scale(1.05);
+  box-shadow: 0 4px 14px rgba(0,0,0,0.20);
+}
+/* Give agent bar extra height so icon labels don't clip */
+#agent-bar {
+  height: 80px;
+}
+
+/* ── 8. Modal handle: more visible, hover feedback ── */
+.modal-handle {
+  width: 44px;
+  height: 4px;
+  opacity: 0.45;
+  margin-bottom: 20px;
+  transition: opacity 0.15s ease;
+}
+.modal-handle:hover { opacity: 0.70; }
+
+/* ── 9. Meeting chips: full-pill + hover lift ── */
+.meeting-chip {
+  border-radius: 100px;
+  padding: 6px 12px 6px 9px;
+  font-size: 12.5px;
+  transition: all 0.15s ease;
+}
+.meeting-chip:not(.selected):not(.chip-disabled):hover {
+  border-color: var(--chip-color, var(--accent));
+  background: var(--bg-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.10);
+}
+.meeting-chip.selected {
+  font-weight: 600;
+  box-shadow:
+    0 0 0 1.5px var(--chip-color, var(--accent)) inset,
+    0 2px 8px rgba(0,0,0,0.08);
+}
+.meeting-chip-dot { width: 8px; height: 8px; }
+
+/* ── 10. Meeting note: SVG icon replaces emoji ── */
+.meeting-note {
+  font-size: 11.5px;
+  padding: 8px 12px;
+  border-left-width: 2.5px;
+  border-radius: 0 8px 8px 0;
+  line-height: 1.65;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 4px;
+}
+.meeting-note-icon {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+/* ── 11. Random panel: cleaner typography ── */
+#random-panel { padding: 10px 20px 12px; }
+.random-hint {
+  font-size: 12.5px;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+.random-selected-badge {
+  border-radius: 100px;
+  padding: 6px 18px;
+  font-size: 13.5px;
+  letter-spacing: 0.02em;
+}
+
+/* ── 12. Opinion cards: better typography + hover ── */
+.opinion-card { padding: 8px 12px; }
+.opinion-text  { font-size: 12.5px; line-height: 1.58; }
+.opinion-toggle-btn {
+  font-size: 11.5px;
+  padding: 4px 10px;
+  border-radius: 8px;
+  gap: 5px;
+}
+
+/* ── 13. Toast: pill style, bolder weight ── */
+.toast {
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  padding: 7px 20px;
+  font-size: 0.75rem;
+}
+
+/* ── 14. Splash button: richer gradient hover ── */
+.btn-start:hover {
+  background: linear-gradient(
+    135deg,
+    rgba(123,108,240,0.12),
+    rgba(92,186,168,0.08)
+  ) !important;
+  border-color: var(--accent) !important;
+  box-shadow:
+    0 0 24px rgba(123,108,240,0.18),
+    0 0 48px rgba(92,186,168,0.08) !important;
+}
+
+/* ── 15. Header: subtle bottom glow ── */
+#header {
+  box-shadow: 0 1px 0 var(--border-vis), 0 2px 12px rgba(0,0,0,0.06);
+}
+
+/* ── 16. Agent avatars in messages: slightly larger ── */
+.agent-avatar-sm { width: 32px; height: 32px; }
+.agent-label     { gap: 9px; }
+.agent-name-label { font-size: 0.81rem; }
+
+/* ── 17. Meeting seq label: better color + weight ── */
+.meeting-seq-label {
+  font-size: 11px;
+  color: var(--text-secondary);
+  opacity: 0.75;
+}
+
+/* ── 18. Settings / Minutes: better section headers ── */
+.settings-section-title,
+.minutes-section-title {
+  font-size: 10.5px;
+  letter-spacing: 0.10em;
+}
+.api-field-input {
+  border-radius: 10px;
+  padding: 9px 12px;
+}
+.settings-save-btn {
+  border-radius: 14px;
+  padding: 13px;
+  font-size: 14.5px;
+  letter-spacing: 0.02em;
+  box-shadow: 0 2px 10px rgba(123,108,240,0.30);
+  transition: opacity var(--transition-fast), box-shadow var(--transition-fast), transform 0.1s;
+}
+.settings-save-btn:hover {
+  opacity: 0.92;
+  box-shadow: 0 4px 16px rgba(123,108,240,0.40);
+  transform: translateY(-1px);
+}
+.settings-save-btn:active { transform: scale(0.97); }
+
+/* ── 19. Map avatar: slightly larger ── */
+.map-avatar { width: 36px; height: 36px; }
+.map-name   { font-size: 0.90rem; }
+
+/* ── 20. Reactions: full-pill ── */
+.reaction { border-radius: 100px; padding: 4px 10px; }
+
+/* ── 21. Sidebar: settings button refined ── */
+.sidebar-settings-btn {
+  padding: 10px 14px;
+  margin-top: 10px;
+  font-size: 13px;
+  border-radius: 11px;
+}
+
+/* ── 22. Mode selector: bolder active ── */
+.mode-btn.active { font-weight: 600; }
+
+/* ── 23. Persona modal avatar: double ring ── */
+.persona-avatar-lg {
+  box-shadow:
+    var(--shadow-md),
+    0 0 0 3px var(--bg-surface),
+    0 0 0 5px var(--border-vis);
+}
+
+/* ── 24. Minutes keywords: accent tint ── */
+.minutes-keyword {
+  border-radius: 6px;
+  font-size: 12.5px;
+  padding: 3px 9px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-vis);
+}
+
+/* ── 25. Scroll-to-bottom button: more prominent ── */
+.scroll-btn {
+  width: 38px;
+  height: 38px;
+  background: var(--bg-elevated);
+  border-color: var(--border-vis);
+  box-shadow: var(--shadow-md);
+}
+.scroll-btn.visible { opacity: 0.92; }
+.scroll-btn:hover   { opacity: 1; box-shadow: var(--shadow-lg); }
+
+/* ── 26. Session list active: left border accent ── */
+#session-list li.active {
+  border-left: 2px solid var(--accent);
+  padding-left: 10px;
+}
+
+/* ── Mobile: slightly more compact conv-tab text ── */
+@media (max-width: 360px) {
+  .conv-tab { font-size: 10.5px; gap: 3px; }
+  .conv-tab svg { width: 12px; height: 12px; }
+}
