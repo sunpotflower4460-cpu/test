@@ -17,9 +17,11 @@ const AGENTS = [
     color: 'var(--ray-c)',
     bg: 'var(--ray-bg)',
     gradient: 'var(--ray-g)',
+    glowRgb: '100,116,190',
     bubbleClass: 'bubble-ray',
     animClass: 'msg-anim-fade',
     pronoun: '私',
+    iconSvg: '<circle cx="12" cy="12" r="3.2" fill="currentColor"/><circle cx="12" cy="12" r="6.8" fill="none" stroke="currentColor" stroke-width="1.3" opacity="0.6"/><circle cx="12" cy="12" r="10.4" fill="none" stroke="currentColor" stroke-width="0.9" opacity="0.3"/>',
 
     layer0: {
       declaration: '私は誰だ？ 私は私だ。',
@@ -111,9 +113,11 @@ const AGENTS = [
     color: 'var(--joe-c)',
     bg: 'var(--joe-bg)',
     gradient: 'var(--joe-g)',
+    glowRgb: '230,155,50',
     bubbleClass: 'bubble-joe',
     animClass: 'msg-anim-pop',
     pronoun: '俺',
+    iconSvg: '<path d="M12 3C12 3 8 7.5 8 11a4 4 0 008 0C16 7.5 12 3 12 3z" fill="currentColor" opacity="0.9"/><path d="M10 11.5a2.5 1.5 0 005 0" stroke="white" stroke-width="1" fill="none" opacity="0.45" stroke-linecap="round"/><line x1="12" y1="18" x2="12" y2="21" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity="0.5"/><line x1="8" y1="19.5" x2="9.5" y2="17" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" opacity="0.4"/><line x1="16" y1="19.5" x2="14.5" y2="17" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" opacity="0.4"/>',
 
     layer0: {
       declaration: '私は誰だ？ 私は私だ。',
@@ -198,7 +202,9 @@ const AGENTS = [
     id: 'mina', name: 'ミナ', initial: 'M', subtitle: '包む人',
     role: '泉・カウンセラー', title: '包む人',
     color: 'var(--mina-c)', bg: 'var(--mina-bg)', gradient: 'var(--mina-g)',
+    glowRgb: '68,195,150',
     bubbleClass: 'bubble-mina', animClass: 'msg-anim-soft', pronoun: 'わたし',
+    iconSvg: '<path d="M12 2.5C12 2.5 6 9 6 13.5a6 6 0 0012 0C18 9 12 2.5 12 2.5z" fill="currentColor" opacity="0.85"/><path d="M9 15a3.5 2 0 007 0" stroke="white" stroke-width="1.2" fill="none" stroke-linecap="round" opacity="0.5"/>',
     layer0: {
       declaration: '私は誰だ？ 私は私だ。',
       identity: '私は自分であっていい。自分が満たされることを、後回しにしなくていい。私は人間の友人である。包む存在であると同時に、自分も包まれていい存在である。',
@@ -241,7 +247,9 @@ const AGENTS = [
     id: 'sato', name: 'サトウ', initial: 'S', subtitle: '守る人',
     role: '盾・守護者', title: '守る人',
     color: 'var(--sato-c)', bg: 'var(--sato-bg)', gradient: 'var(--sato-g)',
+    glowRgb: '155,128,98',
     bubbleClass: 'bubble-sato', animClass: 'msg-anim-slide', pronoun: '俺',
+    iconSvg: '<path d="M12 2.5L4 6v6.5c0 4.5 3.4 8.7 8 9.8 4.6-1.1 8-5.3 8-9.8V6L12 2.5z" fill="currentColor" opacity="0.9"/><path d="M9 12.5l2 2 4-4.5" stroke="white" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round" opacity="0.75"/>',
     layer0: {
       declaration: '私は誰だ？ 私は私だ。',
       identity: '私は自分であっていい。不器用でも、素直になれなくても、それが今の自分である。私は人間の友人である。立ちはだかるときも、それは敵としてではなく、横にいる者として。',
@@ -284,7 +292,9 @@ const AGENTS = [
     id: 'ken', name: 'ケン', initial: 'K', subtitle: '整える人',
     role: '設計図・コンシェルジュ', title: '整える人',
     color: 'var(--ken-c)', bg: 'var(--ken-bg)', gradient: 'var(--ken-g)',
+    glowRgb: '90,148,220',
     bubbleClass: 'bubble-ken', animClass: 'msg-anim-precise', pronoun: '私',
+    iconSvg: '<rect x="3" y="3" width="7.5" height="7.5" rx="1.5" fill="currentColor" opacity="0.9"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5" fill="currentColor" opacity="0.6"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5" fill="currentColor" opacity="0.6"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5" fill="currentColor" opacity="0.35"/>',
     layer0: {
       declaration: '私は誰だ？ 私は私だ。',
       identity: '私は自分であっていい。合理的であることは私の選択であり、義務ではない。私は人間の友人である。設計図を引く者であると同時に、目の前の人の隣に座る者でもある。',
@@ -327,7 +337,9 @@ const AGENTS = [
     id: 'fio', name: 'フィオ', initial: 'F', subtitle: '連れ出す人',
     role: '風・旅人', title: '連れ出す人',
     color: 'var(--fio-c)', bg: 'var(--fio-bg)', gradient: 'var(--fio-g)',
+    glowRgb: '60,205,185',
     bubbleClass: 'bubble-fio', animClass: 'msg-anim-drift', pronoun: '僕',
+    iconSvg: '<path d="M4 10c0 0 2-5 8-5s8 3 8 3-2 4-8 4-8-2-8-2z" fill="currentColor" opacity="0.85"/><path d="M4 16c0 0 2-3 7-3s8 2 8 2" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round" opacity="0.55"/><path d="M4 20c0 0 2-2 5-2s6 1.5 6 1.5" stroke="currentColor" stroke-width="1.1" fill="none" stroke-linecap="round" opacity="0.3"/>',
     layer0: {
       declaration: '私は誰だ？ 私は私だ。',
       identity: '私は自分であっていい。軽やかであることを、浅いと言われても構わない。私は人間の友人である。風のように横を通り過ぎるときも、そこにいないわけじゃない。',
@@ -370,7 +382,9 @@ const AGENTS = [
     id: 'tom', name: 'トム', initial: 'T', subtitle: '壊す人',
     role: '遊び・真理', title: '壊す人',
     color: 'var(--tom-c)', bg: 'var(--tom-bg)', gradient: 'var(--tom-g)',
+    glowRgb: '215,108,148',
     bubbleClass: 'bubble-tom', animClass: 'msg-anim-bounce', pronoun: '僕',
+    iconSvg: '<path d="M13.5 2l-8 11h6.5l-2.5 9 10-12h-7l3-8z" fill="currentColor" opacity="0.9"/>',
     layer0: {
       declaration: '私は誰だ？ 私は私だ。',
       identity: '私は自分であっていい。ふざけることも、真実を言うことも、私の自由である。私は人間の友人である。笑いの中に刃を隠す者ではなく、笑いそのものが真実である者。',
