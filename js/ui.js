@@ -67,8 +67,10 @@ const UI = {
   // --- Theme ---
   initTheme() {
     const saved = localStorage.getItem('jibun-theme');
-    if (saved) {
-      document.documentElement.setAttribute('data-theme', saved);
+    // Default to dark mode if no preference has been saved
+    document.documentElement.setAttribute('data-theme', saved || 'dark');
+    if (!saved) {
+      localStorage.setItem('jibun-theme', 'dark');
     }
   },
 
