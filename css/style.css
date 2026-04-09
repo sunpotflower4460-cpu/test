@@ -709,7 +709,7 @@ body {
   box-shadow: 0 3px 14px var(--shadow-color);
   transition: box-shadow var(--transition-spring), transform var(--transition-spring);
   position:relative;
-  overflow:visible;
+  overflow:hidden;
   border:2px solid rgba(255,255,255,0.18);
 }
 /* soft inner highlight */
@@ -862,26 +862,20 @@ body {
   display:flex; align-items:center; justify-content:center;
   color:#fff;
   margin:0 auto 14px;
-  box-shadow: 0 6px 24px var(--shadow-color);
+  box-shadow: 0 6px 24px var(--shadow-color), 0 0 32px var(--glow, rgba(123,108,240,0.3));
   position:relative;
   border:2.5px solid rgba(255,255,255,0.2);
+  animation: persona-orb-breathe 4s ease-in-out infinite;
+}
+@keyframes persona-orb-breathe {
+  0%,100% { box-shadow: 0 6px 24px var(--shadow-color), 0 0 28px var(--glow, rgba(123,108,240,0.28)); }
+  50%      { box-shadow: 0 8px 32px var(--shadow-color), 0 0 48px var(--glow, rgba(123,108,240,0.45)); }
 }
 .persona-avatar-lg::after {
   content:'';
   position:absolute; inset:0; border-radius:50%;
   background: radial-gradient(circle at 35% 28%, rgba(255,255,255,0.32) 0%, transparent 65%);
   pointer-events:none;
-}
-.persona-avatar-glow {
-  position:absolute;
-  width:100%; height:100%;
-  border-radius:50%;
-  opacity:0.4;
-  filter:blur(14px);
-  transform:scale(1.5);
-  z-index:-1;
-  pointer-events:none;
-  animation: orb-breathe 4s ease-in-out infinite;
 }
 .persona-avatar-lg .agent-card-icon { width:32px; height:32px; opacity:0.92; position:relative; z-index:1; }
 .persona-name { font-size:1.2rem; font-weight:500; margin-bottom:3px; }

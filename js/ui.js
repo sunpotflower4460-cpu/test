@@ -6,6 +6,8 @@
 //   - Dead code: setFocusedMessage/clearFocus removed
 // ==========================================
 
+const DEFAULT_GLOW_RGB = '123,108,240'; // matches --accent color
+
 const UI = {
   els: {},
   _scrollLockY: 0,
@@ -198,7 +200,7 @@ const UI = {
       const el = document.createElement('div');
       el.className = 'agent-card' + (selectedId === agent.id ? ' selected' : '');
       el.dataset.agentId = agent.id;
-      const glowStyle = agent.glowRgb ? ' --glow:rgba(' + agent.glowRgb + ',0.5);' : '';
+      const glowStyle = agent.glowRgb ? ' --glow: rgba(' + agent.glowRgb + ', 0.5);' : '';
       el.innerHTML =
         '<div class="agent-card-avatar" style="background:' + agent.gradient + ';' + glowStyle + '">' +
           this._agentIconSvg(agent, 22) +
@@ -342,8 +344,7 @@ const UI = {
 
     this.els.personaDetail.innerHTML =
       '<div class="persona-header">' +
-        '<div class="persona-avatar-lg" style="background:' + agent.gradient + ';">' +
-          '<div class="persona-avatar-glow" style="background:' + agent.gradient + ';"></div>' +
+        '<div class="persona-avatar-lg" style="background:' + agent.gradient + '; --glow: rgba(' + (agent.glowRgb || DEFAULT_GLOW_RGB) + ', 0.45);">' +
           this._agentIconSvg(agent, 32) +
         '</div>' +
         '<div class="persona-name" style="color:' + agent.color + ';">' + this.escapeHtml(agent.name) + '</div>' +
