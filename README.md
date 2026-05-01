@@ -23,32 +23,46 @@
 4. ただのチャットではなく「内面の会議」に見えること
 5. 既存の会話ロジックを壊さず、段階的に改善すること
 
+## 現在のUI強化状況
+
+- Phase 0: UI方針と安全ルールを整理
+- Phase 1: スプラッシュ、背景、空チャット、入力欄の見た目を強化
+- Phase 2: エージェントバーを声のデッキ化し、`委ねる` と現在の声ステータスを追加
+- Phase 3: 会議録、会議メモ風の返信、星座風の関係性マップを追加
+- Phase 4: Cloudflare Pages 手動デプロイ手順を整理
+
 ## デプロイ方針
 
 Vercelは使いません。
 
 必要に応じて、Cloudflare Pages に手動デプロイします。
 
+Cloudflare Pages の詳しい手順は以下にまとめています。
+
+- [`docs/cloudflare-manual-deploy.md`](docs/cloudflare-manual-deploy.md)
+
 このリポジトリは静的サイト構成のため、Cloudflare Pages では基本的に以下の方針で扱います。
 
+- Framework preset: `None`
 - Build command: 空欄、または不要
 - Build output directory: `/` またはプロジェクトルート
-- 環境変数: Phase 0時点では不要
+- Environment variables: Phase 4時点では不要
 - API key / token / secret は絶対にコードへ書かない
 
 ## 触ってよい範囲
 
-Phase 1以降のUI改善では、主に以下を触ります。
+UI改善では、主に以下を触ります。
 
 - `index.html`
-- `css/style.css`
+- `css/`
 - `js/ui.js` の表示まわり
+- 追加のPhase別UI補助JS
 - `README.md`
 - `docs/`
 
 ## 触らない範囲
 
-Phase 0〜Phase 1では以下を触りません。
+安全なUI改善Phaseでは以下を触りません。
 
 - `js/chat.js` の会話生成ロジック
 - `js/agents.js` の思想・人格定義の大幅変更
@@ -65,13 +79,13 @@ Phase 0〜Phase 1では以下を触りません。
 以下は必ず手動確認を挟みます。
 
 - Cloudflare Pages の本番公開判断
+- 独自ドメイン接続
 - API key / token / secret の作成や登録
 - 認証・DB・課金まわりの導入
 - 中核思想やエージェント性格に関わる大きな変更
 - 大規模リファクタ
 
-## UI redesign plan
-
-UI強化の設計は以下にまとめます。
+## 設計ドキュメント
 
 - [`docs/ui-redesign-plan.md`](docs/ui-redesign-plan.md)
+- [`docs/cloudflare-manual-deploy.md`](docs/cloudflare-manual-deploy.md)
