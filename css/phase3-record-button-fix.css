@@ -1,0 +1,19 @@
+/* Phase 3 small fix: reset meeting-record button appearance */
+
+.meeting-record-main {
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: inherit;
+  font-family: var(--font);
+  text-align: left;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.meeting-record-main:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--accent), transparent 35%);
+  outline-offset: 3px;
+  border-radius: 10px;
+}
