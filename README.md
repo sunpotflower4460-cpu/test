@@ -33,6 +33,7 @@
 - Phase 4: Cloudflare Pages 手動デプロイ手順を整理
 - Phase 5: 公開前品質チェックリストを整理
 - Phase 6A: World-class UI/UX化の設計基準を整理
+- Phase 6B: デザインシステムと共通UIトークンを追加
 
 ## デプロイ方針
 
@@ -53,7 +54,7 @@ Cloudflare Pages の詳しい手順は以下にまとめています。
 - Framework preset: `None`
 - Build command: 空欄、または不要
 - Build output directory: `/` またはプロジェクトルート
-- Environment variables: Phase 6A時点では不要
+- Environment variables: Phase 6B時点では不要
 - API key / token / secret は絶対にコードへ書かない
 
 ## 触ってよい範囲
@@ -98,3 +99,4 @@ UI改善では、主に以下を触ります。
 - [`docs/cloudflare-manual-deploy.md`](docs/cloudflare-manual-deploy.md)
 - [`docs/release-quality-checklist.md`](docs/release-quality-checklist.md)
 - [`docs/world-class-ui-ux-plan.md`](docs/world-class-ui-ux-plan.md)
+- [`docs/design-system-plan.md`](docs/design-system-plan.md)
