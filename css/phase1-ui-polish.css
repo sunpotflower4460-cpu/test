@@ -1,0 +1,444 @@
+/* =========================================
+   じぶん会議 test版 – Phase 1 UI polish
+   Goal: first impression, mobile comfort, splash/welcome/input quality
+   Scope: visual overrides only. No app logic changes.
+   ========================================= */
+
+:root {
+  --phase1-glass: rgba(255, 255, 255, 0.055);
+  --phase1-glass-strong: rgba(255, 255, 255, 0.09);
+  --phase1-glass-border: rgba(255, 255, 255, 0.13);
+  --phase1-glow-purple: rgba(123, 108, 240, 0.28);
+  --phase1-glow-cyan: rgba(92, 186, 168, 0.18);
+  --phase1-glow-gold: rgba(226, 160, 64, 0.14);
+  --phase1-soft-shadow: 0 18px 60px rgba(0, 0, 0, 0.32);
+  --phase1-card-shadow: 0 14px 42px rgba(0, 0, 0, 0.24);
+  --phase1-inner-line: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="light"] {
+  --phase1-glass: rgba(255, 255, 255, 0.72);
+  --phase1-glass-strong: rgba(255, 255, 255, 0.88);
+  --phase1-glass-border: rgba(70, 64, 90, 0.12);
+  --phase1-glow-purple: rgba(99, 86, 216, 0.14);
+  --phase1-glow-cyan: rgba(92, 186, 168, 0.13);
+  --phase1-glow-gold: rgba(226, 160, 64, 0.12);
+  --phase1-soft-shadow: 0 18px 48px rgba(42, 38, 58, 0.12);
+  --phase1-card-shadow: 0 14px 36px rgba(42, 38, 58, 0.10);
+  --phase1-inner-line: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --phase1-glass: rgba(255, 255, 255, 0.72);
+    --phase1-glass-strong: rgba(255, 255, 255, 0.88);
+    --phase1-glass-border: rgba(70, 64, 90, 0.12);
+    --phase1-glow-purple: rgba(99, 86, 216, 0.14);
+    --phase1-glow-cyan: rgba(92, 186, 168, 0.13);
+    --phase1-glow-gold: rgba(226, 160, 64, 0.12);
+    --phase1-soft-shadow: 0 18px 48px rgba(42, 38, 58, 0.12);
+    --phase1-card-shadow: 0 14px 36px rgba(42, 38, 58, 0.10);
+    --phase1-inner-line: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  }
+}
+
+/* --- App atmosphere ------------------------------------------------------ */
+body {
+  background:
+    radial-gradient(circle at 18% 12%, var(--phase1-glow-purple), transparent 34%),
+    radial-gradient(circle at 84% 18%, var(--phase1-glow-cyan), transparent 30%),
+    radial-gradient(circle at 58% 92%, var(--phase1-glow-gold), transparent 38%),
+    linear-gradient(180deg, color-mix(in srgb, var(--bg-base), #111827 10%) 0%, var(--bg-base) 100%);
+}
+
+#app::before,
+#app::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+#app::before {
+  background:
+    radial-gradient(circle at 18% 24%, rgba(255,255,255,0.08) 0 1px, transparent 1.8px),
+    radial-gradient(circle at 72% 16%, rgba(255,255,255,0.07) 0 1px, transparent 1.8px),
+    radial-gradient(circle at 64% 68%, rgba(255,255,255,0.055) 0 1px, transparent 1.8px),
+    radial-gradient(circle at 28% 76%, rgba(255,255,255,0.045) 0 1px, transparent 1.8px);
+  opacity: 0.78;
+  animation: phase1-star-drift 18s ease-in-out infinite alternate;
+}
+
+#app::after {
+  background: linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.08) 100%);
+  mix-blend-mode: multiply;
+}
+
+@keyframes phase1-star-drift {
+  from { transform: translate3d(0, 0, 0) scale(1); }
+  to { transform: translate3d(0, -10px, 0) scale(1.02); }
+}
+
+.screen {
+  z-index: 1;
+}
+
+/* --- Onboarding polish --------------------------------------------------- */
+#onboarding-screen {
+  background:
+    radial-gradient(circle at 50% 18%, var(--phase1-glow-purple), transparent 34%),
+    radial-gradient(circle at 16% 86%, var(--phase1-glow-cyan), transparent 28%),
+    var(--bg-base);
+}
+
+.onboarding-container {
+  margin: 0 16px;
+  border: 1px solid var(--phase1-glass-border);
+  border-radius: 30px;
+  background: color-mix(in srgb, var(--phase1-glass), transparent 12%);
+  box-shadow: var(--phase1-soft-shadow), var(--phase1-inner-line);
+  backdrop-filter: blur(26px);
+  -webkit-backdrop-filter: blur(26px);
+}
+
+.onboarding-title,
+.welcome-title,
+.splash-title {
+  text-wrap: balance;
+}
+
+.onboarding-text,
+.welcome-subtitle,
+.splash-desc {
+  text-wrap: pretty;
+}
+
+/* --- Splash as an entrance ------------------------------------------------ */
+#splash-screen {
+  background:
+    radial-gradient(circle at 50% 32%, rgba(123,108,240,0.22), transparent 28%),
+    radial-gradient(circle at 30% 76%, rgba(92,186,168,0.14), transparent 30%),
+    radial-gradient(circle at 78% 70%, rgba(226,160,64,0.12), transparent 32%),
+    linear-gradient(180deg, color-mix(in srgb, var(--bg-base), #161827 16%) 0%, var(--bg-base) 100%);
+}
+
+.splash-content {
+  width: min(360px, calc(100vw - 36px));
+  padding: 34px 24px 28px;
+  border: 1px solid var(--phase1-glass-border);
+  border-radius: 34px;
+  background: linear-gradient(180deg, var(--phase1-glass-strong), color-mix(in srgb, var(--phase1-glass), transparent 30%));
+  box-shadow: var(--phase1-soft-shadow), var(--phase1-inner-line);
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+}
+
+.splash-orb {
+  width: 92px;
+  height: 92px;
+  position: relative;
+  filter: none;
+  box-shadow:
+    0 0 34px rgba(123,108,240,0.24),
+    0 0 82px rgba(92,186,168,0.13),
+    inset 0 0 22px rgba(255,255,255,0.11);
+}
+
+.splash-orb::before,
+.splash-orb::after {
+  content: "";
+  position: absolute;
+  border-radius: 999px;
+  inset: -14px;
+  border: 1px solid rgba(255,255,255,0.12);
+  animation: phase1-orbit 6s linear infinite;
+}
+
+.splash-orb::after {
+  inset: -24px;
+  opacity: 0.45;
+  animation-duration: 10s;
+  animation-direction: reverse;
+}
+
+@keyframes phase1-orbit {
+  to { transform: rotate(360deg); }
+}
+
+.splash-title {
+  font-size: clamp(2rem, 9vw, 2.72rem);
+  letter-spacing: 0.22em;
+  margin-right: -0.22em;
+}
+
+.splash-subtitle {
+  margin-top: 0.72rem;
+  color: color-mix(in srgb, var(--text-secondary), var(--text-primary) 16%);
+}
+
+.splash-desc {
+  margin: 2.1rem 0 2.35rem;
+  padding: 15px 16px;
+  border-radius: 20px;
+  background: color-mix(in srgb, var(--bg-surface), transparent 36%);
+  border: 1px solid color-mix(in srgb, var(--phase1-glass-border), transparent 18%);
+}
+
+.btn-start {
+  min-height: 48px;
+  width: min(240px, 100%);
+  border-color: color-mix(in srgb, var(--accent), var(--text-muted) 40%);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--accent), transparent 70%), color-mix(in srgb, var(--bg-elevated), transparent 18%));
+  box-shadow: 0 10px 30px rgba(123,108,240,0.18), var(--phase1-inner-line);
+}
+
+.btn-start:hover {
+  transform: translateY(-1px);
+}
+
+/* --- Header glass --------------------------------------------------------- */
+#header {
+  background: color-mix(in srgb, var(--bg-surface), transparent 20%);
+  border-bottom-color: color-mix(in srgb, var(--border-vis), transparent 32%);
+  box-shadow: 0 8px 26px rgba(0,0,0,0.10);
+}
+
+.icon-btn {
+  border: 1px solid transparent;
+}
+
+.icon-btn:hover {
+  border-color: var(--phase1-glass-border);
+}
+
+/* --- Main chat surface ---------------------------------------------------- */
+#main-screen {
+  background:
+    radial-gradient(circle at 18% 12%, color-mix(in srgb, var(--accent), transparent 84%), transparent 34%),
+    radial-gradient(circle at 88% 86%, rgba(92,186,168,0.10), transparent 30%);
+}
+
+#chat-area {
+  padding-top: 24px;
+  padding-bottom: calc(var(--agent-bar-h) + 118px + env(safe-area-inset-bottom));
+}
+
+#messages {
+  width: min(100%, 680px);
+}
+
+.message-user .bubble,
+.message-agent .bubble {
+  box-shadow: var(--phase1-card-shadow), var(--phase1-inner-line);
+}
+
+.message-user .bubble {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--bg-elevated), transparent 5%), color-mix(in srgb, var(--bg-surface), transparent 18%));
+}
+
+.agent-label {
+  padding-left: 2px;
+}
+
+.agent-avatar-sm {
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.10), 0 6px 18px var(--shadow-color);
+}
+
+/* --- Welcome prompt as today's meeting room ------------------------------ */
+.welcome-prompt {
+  width: min(100%, 620px);
+  margin: min(8vh, 56px) auto 24px;
+  min-height: auto;
+  padding: 30px 20px 24px;
+  border: 1px solid var(--phase1-glass-border);
+  border-radius: 32px;
+  background:
+    radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--accent), transparent 80%), transparent 34%),
+    linear-gradient(180deg, var(--phase1-glass-strong), color-mix(in srgb, var(--phase1-glass), transparent 28%));
+  box-shadow: var(--phase1-soft-shadow), var(--phase1-inner-line);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+}
+
+.welcome-orb {
+  width: 70px;
+  height: 70px;
+  margin-bottom: 1.25rem;
+  box-shadow:
+    0 0 28px rgba(123,108,240,0.22),
+    0 0 64px rgba(92,186,168,0.12),
+    inset 0 0 18px rgba(255,255,255,0.10);
+}
+
+.welcome-title {
+  font-size: 1.28rem;
+  letter-spacing: 0.08em;
+}
+
+.welcome-subtitle {
+  max-width: 320px;
+  line-height: 1.85;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.welcome-suggestions {
+  gap: 10px;
+  max-width: 390px;
+}
+
+.welcome-suggestion-btn {
+  min-height: 40px;
+  padding: 9px 15px;
+  background: color-mix(in srgb, var(--bg-elevated), transparent 8%);
+  border-color: color-mix(in srgb, var(--border-vis), var(--accent) 12%);
+  color: color-mix(in srgb, var(--text-secondary), var(--text-primary) 14%);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.08), var(--phase1-inner-line);
+}
+
+.welcome-suggestion-btn:hover,
+.welcome-suggestion-btn:focus-visible {
+  outline: none;
+  color: var(--accent);
+  background: var(--accent-soft);
+  border-color: color-mix(in srgb, var(--accent), transparent 18%);
+  transform: translateY(-1px);
+}
+
+/* --- Agent bar: softer foundation for later deck work -------------------- */
+#agent-bar {
+  background: linear-gradient(180deg, transparent, color-mix(in srgb, var(--bg-base), transparent 8%) 20%, color-mix(in srgb, var(--bg-surface), transparent 18%));
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+  border-top-color: color-mix(in srgb, var(--border-vis), transparent 34%);
+}
+
+.agent-card {
+  box-shadow: var(--phase1-inner-line);
+}
+
+.agent-card.selected {
+  filter: drop-shadow(0 10px 20px rgba(123,108,240,0.16));
+}
+
+/* --- Input area: glass app-like composer --------------------------------- */
+#input-area {
+  padding: 10px 14px max(12px, env(safe-area-inset-bottom));
+  background: linear-gradient(180deg, color-mix(in srgb, var(--bg-base), transparent 82%), color-mix(in srgb, var(--bg-surface), transparent 12%));
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-top: 1px solid color-mix(in srgb, var(--border-vis), transparent 35%);
+}
+
+.input-wrapper {
+  width: min(100%, 680px);
+  margin: 0 auto;
+  min-height: 52px;
+  padding: 6px 7px 6px 16px;
+  border: 1px solid var(--phase1-glass-border);
+  border-radius: 24px;
+  background: linear-gradient(180deg, var(--phase1-glass-strong), color-mix(in srgb, var(--phase1-glass), transparent 20%));
+  box-shadow: 0 12px 34px rgba(0,0,0,0.18), var(--phase1-inner-line);
+}
+
+#user-input {
+  min-height: 38px;
+  padding-top: 9px;
+  padding-bottom: 7px;
+  line-height: 1.65;
+}
+
+#user-input::placeholder {
+  color: color-mix(in srgb, var(--text-muted), var(--text-secondary) 22%);
+}
+
+.send-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 18px;
+  box-shadow: 0 8px 22px rgba(123,108,240,0.18), var(--phase1-inner-line);
+}
+
+.send-btn:not(:disabled) {
+  background: linear-gradient(135deg, color-mix(in srgb, var(--accent), #fff 10%), var(--accent));
+}
+
+.send-btn:not(:disabled):active {
+  transform: scale(0.92) translateY(1px);
+}
+
+/* --- Toast polish --------------------------------------------------------- */
+.toast {
+  border: 1px solid var(--phase1-glass-border);
+  background: color-mix(in srgb, var(--bg-elevated), transparent 6%);
+  box-shadow: var(--phase1-card-shadow), var(--phase1-inner-line);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+/* --- Mobile refinements --------------------------------------------------- */
+@media (max-width: 560px) {
+  :root {
+    --header-h: 54px;
+  }
+
+  .splash-content {
+    border-radius: 30px;
+    padding: 30px 20px 24px;
+  }
+
+  .splash-desc {
+    font-size: 0.82rem;
+  }
+
+  .welcome-prompt {
+    margin-top: 26px;
+    border-radius: 28px;
+    padding: 26px 16px 20px;
+  }
+
+  .welcome-suggestions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    width: 100%;
+  }
+
+  .welcome-suggestion-btn {
+    width: 100%;
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  #chat-area {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+
+  .message-user .bubble,
+  .message-agent .bubble {
+    max-width: 88%;
+  }
+}
+
+@media (max-width: 360px) {
+  .welcome-suggestions {
+    grid-template-columns: 1fr;
+  }
+
+  .splash-title {
+    letter-spacing: 0.16em;
+    margin-right: -0.16em;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #app::before,
+  .splash-orb,
+  .splash-orb::before,
+  .splash-orb::after,
+  .welcome-orb,
+  .onboarding-orb--multi {
+    animation: none !important;
+  }
+}
