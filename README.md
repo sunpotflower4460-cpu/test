@@ -29,7 +29,9 @@
 - Phase 1: スプラッシュ、背景、空チャット、入力欄の見た目を強化
 - Phase 2: エージェントバーを声のデッキ化し、`委ねる` と現在の声ステータスを追加
 - Phase 3: 会議録、会議メモ風の返信、星座風の関係性マップを追加
+- Phase 3.5: スマホsafe-area、入力欄、モーダル、トースト、小画面表示を調整
 - Phase 4: Cloudflare Pages 手動デプロイ手順を整理
+- Phase 5: 公開前品質チェックリストを整理
 
 ## デプロイ方針
 
@@ -41,12 +43,16 @@ Cloudflare Pages の詳しい手順は以下にまとめています。
 
 - [`docs/cloudflare-manual-deploy.md`](docs/cloudflare-manual-deploy.md)
 
+公開前の確認項目は以下にまとめています。
+
+- [`docs/release-quality-checklist.md`](docs/release-quality-checklist.md)
+
 このリポジトリは静的サイト構成のため、Cloudflare Pages では基本的に以下の方針で扱います。
 
 - Framework preset: `None`
 - Build command: 空欄、または不要
 - Build output directory: `/` またはプロジェクトルート
-- Environment variables: Phase 4時点では不要
+- Environment variables: Phase 5時点では不要
 - API key / token / secret は絶対にコードへ書かない
 
 ## 触ってよい範囲
@@ -89,3 +95,4 @@ UI改善では、主に以下を触ります。
 
 - [`docs/ui-redesign-plan.md`](docs/ui-redesign-plan.md)
 - [`docs/cloudflare-manual-deploy.md`](docs/cloudflare-manual-deploy.md)
+- [`docs/release-quality-checklist.md`](docs/release-quality-checklist.md)
