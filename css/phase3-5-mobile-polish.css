@@ -1,0 +1,225 @@
+/* Phase 3.5: mobile polish and touch comfort */
+
+:root {
+  --app-vh: 1vh;
+  --mobile-edge: max(14px, env(safe-area-inset-left));
+  --mobile-bottom: max(12px, env(safe-area-inset-bottom));
+}
+
+html,
+body,
+#app {
+  min-height: 100%;
+  min-height: calc(var(--app-vh) * 100);
+}
+
+button,
+.agent-card,
+.welcome-suggestion-btn,
+.mode-btn {
+  -webkit-tap-highlight-color: transparent;
+}
+
+#main-screen.active {
+  min-height: calc(var(--app-vh) * 100);
+}
+
+#header {
+  padding-left: max(10px, env(safe-area-inset-left));
+  padding-right: max(10px, env(safe-area-inset-right));
+}
+
+#chat-area {
+  scroll-padding-bottom: calc(var(--agent-bar-h) + 136px + env(safe-area-inset-bottom));
+}
+
+#messages {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.input-wrapper:focus-within {
+  border-color: color-mix(in srgb, var(--accent), transparent 42%);
+  box-shadow:
+    0 14px 36px rgba(0,0,0,0.20),
+    0 0 0 1px color-mix(in srgb, var(--accent), transparent 72%),
+    inset 0 1px 0 rgba(255,255,255,0.10);
+}
+
+#user-input {
+  font-size: 16px;
+}
+
+#agent-icons {
+  overscroll-behavior-x: contain;
+}
+
+.modal-sheet {
+  max-height: min(82vh, calc(var(--app-vh) * 86));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-bottom: max(22px, env(safe-area-inset-bottom));
+}
+
+#sidebar {
+  max-width: min(88vw, 340px);
+  padding-bottom: max(18px, env(safe-area-inset-bottom));
+}
+
+#session-list {
+  padding-bottom: 10px;
+}
+
+.toast {
+  left: max(16px, env(safe-area-inset-left));
+  right: max(16px, env(safe-area-inset-right));
+  width: auto;
+  max-width: 520px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+@media (max-width: 560px) {
+  body {
+    overflow-x: hidden;
+  }
+
+  #header {
+    gap: 6px;
+  }
+
+  #header-center {
+    min-width: 0;
+  }
+
+  #session-title {
+    max-width: 48vw;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .icon-btn {
+    min-width: 42px;
+    min-height: 42px;
+  }
+
+  #chat-area {
+    padding-left: var(--mobile-edge);
+    padding-right: var(--mobile-edge);
+    padding-bottom: calc(var(--agent-bar-h) + 132px + env(safe-area-inset-bottom));
+  }
+
+  .welcome-prompt {
+    width: 100%;
+    margin-top: 18px;
+  }
+
+  .welcome-title {
+    font-size: 1.18rem;
+  }
+
+  .message {
+    margin-bottom: 18px;
+  }
+
+  .message-user .bubble,
+  .message-agent .bubble {
+    max-width: 90%;
+    word-break: break-word;
+  }
+
+  .agent-label {
+    max-width: 90%;
+  }
+
+  #agent-bar {
+    height: 100px;
+  }
+
+  .agent-card {
+    min-height: 74px;
+  }
+
+  #input-area {
+    padding-left: var(--mobile-edge);
+    padding-right: max(14px, env(safe-area-inset-right));
+  }
+
+  .agent-status {
+    max-width: calc(100vw - 28px);
+  }
+
+  .input-wrapper {
+    border-radius: 22px;
+  }
+
+  .send-btn {
+    min-width: 42px;
+    min-height: 42px;
+  }
+
+  .modal-sheet {
+    width: calc(100vw - 18px);
+    border-radius: 28px 28px 0 0;
+  }
+
+  .persona-section,
+  .constellation-legend-item {
+    border-radius: 16px;
+  }
+
+  .constellation-stage {
+    width: min(100%, 330px);
+  }
+}
+
+@media (max-width: 390px) {
+  .agent-card {
+    min-width: 68px;
+    max-width: 72px;
+  }
+
+  .agent-card--random {
+    min-width: 78px;
+  }
+
+  .agent-card-label {
+    font-size: 0.72rem;
+  }
+
+  .agent-card-subtitle {
+    font-size: 0.53rem;
+  }
+
+  .constellation-stage {
+    height: 310px;
+  }
+
+  .constellation-node {
+    width: 60px;
+    min-height: 62px;
+  }
+
+  .constellation-name {
+    font-size: 0.62rem;
+  }
+
+  .constellation-role {
+    display: none;
+  }
+}
+
+@media (max-width: 340px) {
+  .welcome-suggestions {
+    grid-template-columns: 1fr;
+  }
+
+  .agent-card {
+    min-width: 64px;
+  }
+
+  #session-title {
+    max-width: 42vw;
+  }
+}
