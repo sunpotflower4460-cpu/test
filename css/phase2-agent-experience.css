@@ -1,0 +1,261 @@
+/* =========================================
+   じぶん会議 test版 – Phase 2 Agent Experience
+   Goal: voice deck, delegation state, selected-agent clarity
+   Scope: UI display only. No response logic changes.
+   ========================================= */
+
+:root {
+  --phase2-deck-bg: rgba(255, 255, 255, 0.055);
+  --phase2-deck-border: rgba(255, 255, 255, 0.12);
+  --phase2-selected-glow: rgba(123, 108, 240, 0.22);
+  --agent-status-color: var(--accent);
+}
+
+[data-theme="light"] {
+  --phase2-deck-bg: rgba(255, 255, 255, 0.74);
+  --phase2-deck-border: rgba(70, 64, 90, 0.13);
+  --phase2-selected-glow: rgba(99, 86, 216, 0.14);
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --phase2-deck-bg: rgba(255, 255, 255, 0.74);
+    --phase2-deck-border: rgba(70, 64, 90, 0.13);
+    --phase2-selected-glow: rgba(99, 86, 216, 0.14);
+  }
+}
+
+/* --- Agent voice deck ----------------------------------------------------- */
+#agent-bar {
+  height: 102px;
+  padding: 9px 0 max(10px, env(safe-area-inset-bottom));
+}
+
+#agent-icons {
+  display: flex;
+  gap: 10px;
+  align-items: stretch;
+  overflow-x: auto;
+  overflow-y: visible;
+  padding: 0 14px 2px;
+  scroll-snap-type: x proximity;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+#agent-icons::-webkit-scrollbar {
+  display: none;
+}
+
+.agent-card {
+  position: relative;
+  min-width: 74px;
+  max-width: 82px;
+  min-height: 78px;
+  padding: 8px 7px 7px;
+  border: 1px solid var(--phase2-deck-border);
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--accent), transparent 86%), transparent 42%),
+    linear-gradient(180deg, var(--phase2-deck-bg), color-mix(in srgb, var(--phase2-deck-bg), transparent 26%));
+  box-shadow: 0 10px 28px rgba(0,0,0,0.13), inset 0 1px 0 rgba(255,255,255,0.08);
+  scroll-snap-align: center;
+  transition:
+    transform 0.18s cubic-bezier(0.34,1.56,0.64,1),
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    background 0.18s ease;
+}
+
+.agent-card:active {
+  transform: scale(0.96) translateY(1px);
+}
+
+.agent-card.selected {
+  transform: translateY(-6px);
+  border-color: color-mix(in srgb, var(--accent), transparent 20%);
+  background:
+    radial-gradient(circle at 50% 0%, var(--phase2-selected-glow), transparent 54%),
+    linear-gradient(180deg, color-mix(in srgb, var(--phase2-deck-bg), var(--accent-soft) 28%), var(--phase2-deck-bg));
+  box-shadow:
+    0 18px 36px rgba(0,0,0,0.20),
+    0 0 0 1px color-mix(in srgb, var(--accent), transparent 70%),
+    0 0 30px var(--phase2-selected-glow),
+    inset 0 1px 0 rgba(255,255,255,0.12);
+}
+
+.agent-card.selected::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -6px;
+  width: 22px;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--accent);
+  transform: translateX(-50%);
+  box-shadow: 0 0 16px var(--accent);
+}
+
+.agent-card-avatar {
+  width: 38px;
+  height: 38px;
+  margin: 0 auto 5px;
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,0.16),
+    0 9px 22px rgba(0,0,0,0.22);
+}
+
+.agent-card-label {
+  display: block;
+  font-size: 0.76rem;
+  font-weight: 600;
+  line-height: 1.15;
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+.agent-card-subtitle {
+  display: block;
+  margin-top: 3px;
+  font-size: 0.58rem;
+  line-height: 1.2;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.agent-card.selected .agent-card-subtitle {
+  color: color-mix(in srgb, var(--accent), var(--text-secondary) 28%);
+}
+
+.agent-card--random {
+  min-width: 88px;
+}
+
+.agent-card--random .agent-card-avatar {
+  background:
+    radial-gradient(circle at 35% 30%, rgba(255,255,255,0.42), transparent 28%),
+    conic-gradient(from 120deg, var(--ray-c), var(--joe-c), var(--mina-c), var(--ken-c), var(--ray-c));
+  color: #fff;
+  font-size: 1rem;
+  letter-spacing: -0.02em;
+}
+
+.agent-card--random.selected {
+  border-color: color-mix(in srgb, var(--joe-c), var(--ray-c) 50%);
+}
+
+.agent-card--random.selected::after {
+  background: linear-gradient(90deg, var(--ray-c), var(--joe-c), var(--mina-c));
+}
+
+/* --- Current voice status ------------------------------------------------- */
+.agent-status {
+  width: min(100%, 680px);
+  margin: 0 auto 8px;
+  min-height: 28px;
+  padding: 6px 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border: 1px solid color-mix(in srgb, var(--agent-status-color), transparent 72%);
+  border-radius: 999px;
+  color: color-mix(in srgb, var(--agent-status-color), var(--text-primary) 20%);
+  background:
+    radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--agent-status-color), transparent 84%), transparent 70%),
+    color-mix(in srgb, var(--bg-elevated), transparent 28%);
+  box-shadow: 0 8px 22px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.08);
+  font-size: 0.72rem;
+  line-height: 1.25;
+  letter-spacing: 0.04em;
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+.agent-status em {
+  font-style: normal;
+  color: var(--text-muted);
+  letter-spacing: 0.02em;
+}
+
+.agent-status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: var(--agent-status-color);
+  box-shadow: 0 0 12px var(--agent-status-color);
+  flex: 0 0 auto;
+}
+
+.agent-status--idle {
+  --agent-status-color: var(--text-muted);
+}
+
+.agent-status--random {
+  --agent-status-color: var(--joe-c);
+}
+
+/* --- Persona modal: clearer top summary ---------------------------------- */
+.persona-summary-card {
+  margin: 0 0 14px;
+  padding: 14px 15px;
+  border: 1px solid color-mix(in srgb, var(--border-vis), transparent 30%);
+  border-radius: 20px;
+  background:
+    radial-gradient(circle at 0% 0%, color-mix(in srgb, var(--accent), transparent 86%), transparent 50%),
+    color-mix(in srgb, var(--bg-elevated), transparent 18%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.08);
+}
+
+.persona-summary-title {
+  margin-bottom: 6px;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  letter-spacing: 0.12em;
+}
+
+.persona-summary-card p {
+  font-size: 0.86rem;
+  line-height: 1.75;
+  color: color-mix(in srgb, var(--text-primary), var(--text-secondary) 10%);
+}
+
+/* --- Mobile --------------------------------------------------------------- */
+@media (max-width: 560px) {
+  #agent-bar {
+    height: 104px;
+  }
+
+  #agent-icons {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .agent-card {
+    min-width: 72px;
+    max-width: 76px;
+  }
+
+  .agent-card--random {
+    min-width: 84px;
+  }
+
+  .agent-status {
+    margin-bottom: 7px;
+    padding-left: 10px;
+    padding-right: 10px;
+    font-size: 0.68rem;
+  }
+
+  .agent-status em {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .agent-card,
+  .agent-card.selected {
+    transition: none !important;
+  }
+}
