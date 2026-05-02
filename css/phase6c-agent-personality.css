@@ -1,0 +1,180 @@
+/* Phase 6C: Agent Personality UI
+   Adds per-agent visual texture without changing agent definitions or response logic. */
+
+:root {
+  --agent-personality-glow: color-mix(in srgb, var(--accent), transparent 78%);
+  --agent-personality-border: color-mix(in srgb, var(--accent), transparent 58%);
+}
+
+.agent-card[data-agent-id]::before {
+  content: "";
+  position: absolute;
+  inset: 6px;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--motion-normal, 220ms) var(--ease-out-soft, ease);
+}
+
+.agent-card[data-agent-id].selected::before {
+  opacity: 0.82;
+}
+
+.agent-card--ray.selected {
+  transform: translateY(-4px) scale(1.01);
+}
+.agent-card--ray.selected::before {
+  background: radial-gradient(circle at 50% 18%, rgba(180, 190, 255, 0.22), transparent 58%);
+  box-shadow: inset 0 0 18px rgba(180, 190, 255, 0.12);
+}
+
+.agent-card--joe.selected {
+  transform: translateY(-8px) scale(1.025);
+}
+.agent-card--joe.selected::before {
+  background: radial-gradient(circle at 50% 12%, rgba(255, 206, 94, 0.32), transparent 56%);
+  box-shadow: 0 -8px 28px rgba(255, 186, 76, 0.18);
+}
+
+.agent-card--mina {
+  border-radius: 26px;
+}
+.agent-card--mina.selected {
+  transform: translateY(-5px) scale(1.035);
+  border-radius: 30px;
+}
+.agent-card--mina.selected::before {
+  background: radial-gradient(circle at 50% 28%, rgba(255, 168, 198, 0.26), transparent 64%);
+}
+
+.agent-card--sato.selected {
+  transform: translateY(-3px) scale(1.005);
+  border-width: 1.5px;
+}
+.agent-card--sato.selected::before {
+  background: linear-gradient(180deg, rgba(180, 70, 70, 0.18), transparent 78%);
+  box-shadow: inset 0 -10px 20px rgba(120, 54, 42, 0.14);
+}
+
+.agent-card--ken.selected {
+  transform: translateY(-5px);
+}
+.agent-card--ken.selected::before {
+  background:
+    linear-gradient(90deg, transparent 48%, rgba(120, 220, 255, 0.22) 49%, rgba(120, 220, 255, 0.22) 51%, transparent 52%),
+    linear-gradient(0deg, transparent 48%, rgba(120, 220, 255, 0.14) 49%, rgba(120, 220, 255, 0.14) 51%, transparent 52%);
+}
+
+.agent-card--fio.selected {
+  transform: translate(2px, -7px) rotate(-1deg);
+}
+.agent-card--fio.selected::before {
+  background: linear-gradient(135deg, transparent, rgba(126, 230, 180, 0.24), transparent 70%);
+}
+
+.agent-card--tom.selected {
+  transform: translateY(-6px) rotate(0.8deg);
+}
+.agent-card--tom.selected::before {
+  background:
+    linear-gradient(115deg, transparent 0 34%, rgba(226, 116, 255, 0.22) 35% 37%, transparent 38% 100%),
+    radial-gradient(circle at 70% 25%, rgba(255, 120, 220, 0.22), transparent 45%);
+}
+
+.agent-card--random.selected::before,
+.agent-card--delegate.selected::before {
+  background: conic-gradient(from 0deg, var(--ray-c), var(--joe-c), var(--mina-c), var(--ken-c), var(--fio-c), var(--tom-c), var(--ray-c));
+  opacity: 0.16;
+  animation: agent-delegate-orbit 9s linear infinite;
+}
+
+@keyframes agent-delegate-orbit {
+  to { transform: rotate(360deg); }
+}
+
+.agent-status[data-agent-id] {
+  border-color: color-mix(in srgb, var(--agent-status-color), transparent 64%);
+}
+
+.agent-status[data-agent-id="ray"] {
+  background: radial-gradient(circle at 50% 0%, rgba(180,190,255,0.16), transparent 70%), var(--surface-glass, rgba(255,255,255,0.06));
+}
+
+.agent-status[data-agent-id="joe"] {
+  background: radial-gradient(circle at 50% 0%, rgba(255,200,90,0.22), transparent 70%), var(--surface-glass, rgba(255,255,255,0.06));
+}
+
+.agent-status[data-agent-id="mina"] {
+  border-radius: var(--radius-full, 999px);
+  background: radial-gradient(circle at 50% 0%, rgba(255,160,196,0.18), transparent 70%), var(--surface-glass, rgba(255,255,255,0.06));
+}
+
+.agent-status[data-agent-id="sato"] {
+  background: linear-gradient(180deg, rgba(168,76,64,0.14), transparent 80%), var(--surface-glass, rgba(255,255,255,0.06));
+}
+
+.agent-status[data-agent-id="ken"] {
+  background: linear-gradient(90deg, rgba(110,210,255,0.10), transparent 22%, rgba(110,210,255,0.08)), var(--surface-glass, rgba(255,255,255,0.06));
+}
+
+.agent-status[data-agent-id="fio"] {
+  background: linear-gradient(135deg, transparent, rgba(115,225,174,0.16), transparent 80%), var(--surface-glass, rgba(255,255,255,0.06));
+}
+
+.agent-status[data-agent-id="tom"] {
+  background: linear-gradient(120deg, rgba(210,100,255,0.12), transparent 44%, rgba(255,120,210,0.10)), var(--surface-glass, rgba(255,255,255,0.06));
+}
+
+.message-agent[data-agent-id] .bubble {
+  position: relative;
+  overflow: hidden;
+}
+
+.message-agent[data-agent-id] .bubble::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  opacity: 0.7;
+  background: var(--agent-ui-color, var(--accent));
+}
+
+.message-agent--ray .bubble::after { background: linear-gradient(180deg, transparent, var(--ray-c), transparent); }
+.message-agent--joe .bubble::after { background: linear-gradient(180deg, var(--joe-c), transparent); }
+.message-agent--mina .bubble::after { background: linear-gradient(180deg, transparent, var(--mina-c), transparent); width: 4px; border-radius: var(--radius-full, 999px); }
+.message-agent--sato .bubble::after { background: var(--sato-c); width: 4px; }
+.message-agent--ken .bubble::after { background: repeating-linear-gradient(180deg, var(--ken-c) 0 6px, transparent 6px 10px); }
+.message-agent--fio .bubble::after { background: linear-gradient(160deg, transparent, var(--fio-c), transparent); }
+.message-agent--tom .bubble::after { background: repeating-linear-gradient(180deg, var(--tom-c) 0 3px, transparent 3px 7px); }
+
+.persona-texture-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 12px;
+  padding: 7px 11px;
+  border: 1px solid color-mix(in srgb, var(--accent), transparent 62%);
+  border-radius: var(--radius-full, 999px);
+  background: color-mix(in srgb, var(--accent), transparent 90%);
+  color: color-mix(in srgb, var(--accent), var(--text-primary) 12%);
+  font-size: var(--font-size-caption, 0.68rem);
+  letter-spacing: 0.05em;
+}
+
+.persona-texture-badge::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: var(--radius-full, 999px);
+  background: var(--accent);
+  box-shadow: 0 0 12px var(--accent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .agent-card--random.selected::before,
+  .agent-card--delegate.selected::before {
+    animation: none !important;
+  }
+}
