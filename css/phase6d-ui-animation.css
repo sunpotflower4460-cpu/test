@@ -1,0 +1,119 @@
+/* Phase 6D: UI animation polish */
+
+:root {
+  --phase6d-shift: 6px;
+  --phase6d-pop: 1.018;
+}
+
+.agent-card.selected {
+  will-change: transform;
+}
+
+.agent-card.selected .agent-card-avatar {
+  animation: phase6d-agent-breathe 4.8s ease-in-out infinite;
+}
+
+.agent-card--delegate.selected .agent-card-avatar,
+.agent-card--random.selected .agent-card-avatar {
+  animation: phase6d-delegate-glow 8s linear infinite;
+}
+
+@keyframes phase6d-agent-breathe {
+  0%, 100% { transform: scale(1); filter: saturate(1); }
+  50% { transform: scale(1.035); filter: saturate(1.12); }
+}
+
+@keyframes phase6d-delegate-glow {
+  0% { filter: hue-rotate(0deg) saturate(1.05); }
+  100% { filter: hue-rotate(360deg) saturate(1.12); }
+}
+
+.message.phase6d-entering {
+  animation: phase6d-message-enter 360ms var(--ease-out-soft, ease-out) both;
+}
+
+@keyframes phase6d-message-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.992);
+    filter: blur(3px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+.input-wrapper.phase6d-send-pulse {
+  animation: phase6d-send-pulse 300ms var(--ease-out-soft, ease-out) both;
+}
+
+@keyframes phase6d-send-pulse {
+  0% { transform: scale(1); }
+  45% { transform: scale(0.992); }
+  100% { transform: scale(1); }
+}
+
+.input-wrapper:focus-within {
+  animation: phase6d-input-breathe 5.6s ease-in-out infinite;
+}
+
+@keyframes phase6d-input-breathe {
+  0%, 100% { box-shadow: 0 14px 36px rgba(0,0,0,0.20), 0 0 0 1px color-mix(in srgb, var(--accent), transparent 76%), inset 0 1px 0 rgba(255,255,255,0.10); }
+  50% { box-shadow: 0 16px 42px rgba(0,0,0,0.23), 0 0 0 1px color-mix(in srgb, var(--accent), transparent 58%), 0 0 28px color-mix(in srgb, var(--accent), transparent 82%), inset 0 1px 0 rgba(255,255,255,0.12); }
+}
+
+.modal.active .modal-sheet {
+  animation: phase6d-sheet-in 280ms var(--ease-out-soft, ease-out) both;
+}
+
+@keyframes phase6d-sheet-in {
+  from { transform: translateY(14px); opacity: 0.88; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+#sidebar.active {
+  transition: transform 300ms var(--ease-out-soft, ease-out), opacity 220ms var(--ease-out-soft, ease-out);
+}
+
+.toast.show {
+  animation: phase6d-toast-in 240ms var(--ease-out-soft, ease-out) both;
+}
+
+@keyframes phase6d-toast-in {
+  from { transform: translateY(8px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.welcome-suggestion-btn:hover,
+.meeting-note-btn:hover,
+.mode-btn:hover,
+.icon-btn:hover {
+  transform: translateY(-1px);
+}
+
+.send-btn:not(:disabled):hover {
+  transform: translateY(-1px) scale(1.02);
+}
+
+.send-btn:not(:disabled):active {
+  transform: translateY(1px) scale(0.94);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .agent-card.selected .agent-card-avatar,
+  .agent-card--delegate.selected .agent-card-avatar,
+  .agent-card--random.selected .agent-card-avatar,
+  .message.phase6d-entering,
+  .input-wrapper.phase6d-send-pulse,
+  .input-wrapper:focus-within,
+  .modal.active .modal-sheet,
+  .toast.show {
+    animation: none !important;
+  }
+
+  #sidebar.active {
+    transition: none !important;
+  }
+}
