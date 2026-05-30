@@ -6,6 +6,8 @@
 //   - Dead code: setFocusedMessage/clearFocus removed
 // ==========================================
 
+const DEFAULT_GLOW_RGB = '123,108,240'; // matches --accent color
+
 const UI = {
   els: {},
   _scrollLockY: 0,
@@ -65,8 +67,10 @@ const UI = {
   // --- Theme ---
   initTheme() {
     const saved = localStorage.getItem('jibun-theme');
-    if (saved) {
-      document.documentElement.setAttribute('data-theme', saved);
+    // Default to dark mode if no preference has been saved
+    document.documentElement.setAttribute('data-theme', saved || 'dark');
+    if (!saved) {
+      localStorage.setItem('jibun-theme', 'dark');
     }
   },
 
@@ -198,9 +202,10 @@ const UI = {
       const el = document.createElement('div');
       el.className = 'agent-card' + (selectedId === agent.id ? ' selected' : '');
       el.dataset.agentId = agent.id;
+      const glowStyle = agent.glowRgb ? ' --glow: rgba(' + agent.glowRgb + ', 0.5);' : '';
       el.innerHTML =
-        '<div class="agent-card-avatar" style="background:' + agent.gradient + ';">' +
-          this.escapeHtml(agent.initial) +
+        '<div class="agent-card-avatar" style="background:' + agent.gradient + ';' + glowStyle + '">' +
+          this._agentIconSvg(agent, 22) +
         '</div>' +
         '<span class="agent-card-label">' + this.escapeHtml(agent.name) + '</span>' +
         '<span class="agent-card-subtitle">' + this.escapeHtml(agent.subtitle || agent.title) + '</span>';
@@ -212,7 +217,7 @@ const UI = {
     randEl.className = 'agent-card agent-card--random' + (selectedId === 'random' ? ' selected' : '');
     randEl.dataset.agentId = 'random';
     randEl.innerHTML =
-      '<div class="agent-card-avatar">?</div>' +
+      '<div class="agent-card-avatar"><span class="agent-card-random-mark">✦</span></div>' +
       '<span class="agent-card-label">ランダム</span>' +
       '<span class="agent-card-subtitle">誰かが答える</span>';
     this.els.agentIcons.appendChild(randEl);
@@ -237,7 +242,7 @@ const UI = {
     div.innerHTML =
       '<div class="agent-label">' +
         '<div class="agent-avatar-sm" style="background:' + agent.gradient + ';">' +
-          this.escapeHtml(agent.initial) +
+          this._agentIconSvg(agent, 16) +
         '</div>' +
         '<span class="agent-name-label" style="color:' + agent.color + ';">' + this.escapeHtml(agent.name) + '</span>' +
         modeLabel +
@@ -280,7 +285,7 @@ const UI = {
     div.innerHTML =
       '<div class="agent-label">' +
         '<div class="agent-avatar-sm" style="background:' + agent.gradient + ';">' +
-          this.escapeHtml(agent.initial) +
+          this._agentIconSvg(agent, 16) +
         '</div>' +
         '<span class="agent-name-label" style="color:' + agent.color + ';">' + this.escapeHtml(agent.name) + '</span>' +
       '</div>' +
@@ -341,8 +346,8 @@ const UI = {
 
     this.els.personaDetail.innerHTML =
       '<div class="persona-header">' +
-        '<div class="persona-avatar-lg" style="background:' + agent.gradient + ';">' +
-          this.escapeHtml(agent.initial) +
+        '<div class="persona-avatar-lg" style="background:' + agent.gradient + '; --glow: rgba(' + (agent.glowRgb || DEFAULT_GLOW_RGB) + ', 0.45);">' +
+          this._agentIconSvg(agent, 32) +
         '</div>' +
         '<div class="persona-name" style="color:' + agent.color + ';">' + this.escapeHtml(agent.name) + '</div>' +
         '<div class="persona-role">' + this.escapeHtml(agent.role) + ' — ' + this.escapeHtml(agent.title) + '</div>' +
@@ -401,7 +406,7 @@ const UI = {
   showMapModal() {
     const itemsHtml = AGENTS.map(a =>
       '<div class="map-item">' +
-        '<div class="map-avatar" style="background:' + a.gradient + ';">' + this.escapeHtml(a.initial) + '</div>' +
+        '<div class="map-avatar" style="background:' + a.gradient + ';">' + this._agentIconSvg(a, 18) + '</div>' +
         '<div>' +
           '<div class="map-name" style="color:' + a.color + ';">' + this.escapeHtml(a.name) + '（' + this.escapeHtml(a.title) + '）</div>' +
           '<div class="map-function">' + this.escapeHtml(a.mapFunction) + '</div>' +
@@ -473,6 +478,14 @@ const UI = {
     const d = document.createElement('div');
     d.textContent = String(text);
     return d.innerHTML.replace(/\n/g, '<br>');
+  },
+
+  _agentIconSvg(agent, size) {
+    size = size || 22;
+    if (!agent.iconSvg) return this.escapeHtml(agent.initial);
+    return '<svg class="agent-card-icon" width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">' +
+      agent.iconSvg +
+    '</svg>';
   },
 
   getInputValue() {
